@@ -4,7 +4,16 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Study/Study.unity
+    guid: 34e51105f90a7454d9192d90d46a0c4f
+  - enabled: 1
+    path: Assets/Study/PhotonFusion.unity
+    guid: c6670d23e430ce94c8ad41ae45d8f854
+  - enabled: 1
+    path: Assets/Study/PurrNet.unity
+    guid: 53368566eeacbf94098b0a45839274c6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
