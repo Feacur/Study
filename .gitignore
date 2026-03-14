@@ -1,0 +1,11 @@
+# https://git-scm.com/docs/gitignore
+
+/.vscode
+/Build
+/Library
+/Logs
+/Temp
+/UserSettings
+
+/*.slnx
+/*.csproj
