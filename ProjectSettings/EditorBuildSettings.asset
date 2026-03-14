@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Dummy.unity
-    guid: 24d74652b810ae74898a72ef61d9920b
+    path: Assets/StudyPhotonKCC/StudyPhotonKCC.unity
+    guid: c6670d23e430ce94c8ad41ae45d8f854
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: a8179cf905ee5fe4180122a47c72fb09, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 96f167e9f45abcd4db098788c923c154, type: 2}
