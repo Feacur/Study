@@ -1,0 +1,23 @@
+// https://code.visualstudio.com/docs/editor/workspaces
+{
+	"folders": [
+		{
+			"path": "Assets",
+		},
+		{
+			"path": "Library/PackageCache",
+		},
+		{
+			"path": ".",
+			"name": "/",
+		},
+	],
+	"settings": {
+		"files.exclude": {
+			"Assets": true,
+			".vscode": true,
+			"**/.git": true,
+		},
+		"editor.insertSpaces": false,
+	},
+}

@@ -1,0 +1,12 @@
+# https://git-scm.com/docs/gitattributes
+
+* text=auto
+
+*.cs    text
+*.meta  text
+*.asset text
+*.unity text
+*.json  text
+
+*.slnx   text
+*.csproj text
