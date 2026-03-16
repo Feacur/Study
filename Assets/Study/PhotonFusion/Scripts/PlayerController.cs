@@ -65,7 +65,8 @@ namespace Study.PhotonFusion
 
 			var lookInput = input.look * _lookSpeed;
 			_kcc.AddLookRotation(lookInput, minPitch: -45, maxPitch: 75);
-			var lookRotation = _kcc.GetLookRotation();
+
+			var lookRotation = _kcc.GetLookRotation(pitch: true, yaw: false);
 			_cameraPivot.localRotation = Quaternion.Euler(lookRotation.x, 0, 0);
 		}
 	}

@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+	// @fixme account for scripts reloading, find object and cache
 	public static CameraController Instance { get; private set; }
 
 	[HideInInspector] public Transform target;
@@ -14,7 +15,8 @@ public class CameraController : MonoBehaviour
 
 	void OnDestroy()
 	{
-		Instance = null;
+		if (Instance == this)
+			Instance = null;
 	}
 
 	void LateUpdate()

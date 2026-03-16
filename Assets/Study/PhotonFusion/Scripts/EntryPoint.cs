@@ -8,20 +8,34 @@ namespace Study.PhotonFusion
 {
 	public class EntryPoint : MonoBehaviour
 	{
+		// @fixme account for scripts reloading, find object and cache
+		public static EntryPoint Instance { get; private set; }
+
 		[SerializeField] GameObject[] _defaultObjects;
 		[SerializeField] Button _switchPresenceButton;
 		[SerializeField] TMP_Text _switchPresenceText;
+		[SerializeField] Button _pushSnapshotButton;
 
 		void Awake()
 		{
-			ChangeMenuVisibility(true);
+			Instance = this;
 			_switchPresenceButton.onClick.AddListener(SwitchPresence);
-			_switchPresenceText.text = "start";
+			_pushSnapshotButton.onClick.AddListener(Network.PushSnapshot);
+			UpdatePushSnapshotButton(false);
 		}
 
 		void OnDestroy()
 		{
 			_switchPresenceButton.onClick.RemoveListener(SwitchPresence);
+			_pushSnapshotButton.onClick.RemoveListener(Network.PushSnapshot);
+			if (Instance == this)
+				Instance = null;
+		}
+
+		void Start()
+		{
+			ChangeMenuVisibility(true);
+			_switchPresenceText.text = "start";
 		}
 
 		void Update()
@@ -29,6 +43,20 @@ namespace Study.PhotonFusion
 			var keyboard = Keyboard.current;
 			if (keyboard.escapeKey.wasPressedThisFrame)
 				ChangeMenuVisibility(!_switchPresenceButton.gameObject.activeSelf);
+		}
+
+		public void SpawnDefaultObjects()
+		{
+			// @note it's meant to instantiate a NetworkRunner et al here
+			foreach (var it in _defaultObjects)
+				Instantiate(it, new InstantiateParameters {
+					parent = transform,
+				});
+		}
+
+		public void UpdatePushSnapshotButton(bool state)
+		{
+			_pushSnapshotButton.gameObject.SetActive(state);
 		}
 
 		private void SwitchPresence()
@@ -42,19 +70,13 @@ namespace Study.PhotonFusion
 				_switchPresenceText.text = "processing...";
 				if (Player.Local)
 				{
-					await Network.Instance.Shutdown();
+					await Network.Shutdown();
 					await UniTask.WaitWhile(() => Player.Local);
 					_switchPresenceText.text = "login";
 				}
 				else
 				{
-					// @note it's meant to instantiate a NetworkRunner et al here
-					foreach (var it in _defaultObjects)
-						Instantiate(it, new InstantiateParameters {
-							parent = transform,
-						});
-
-					await Network.Instance.StartGame();
+					await Network.StartGame();
 					await UniTask.WaitUntil(() => Player.Local);
 					_switchPresenceText.text = "logout";
 					ChangeMenuVisibility(false);
