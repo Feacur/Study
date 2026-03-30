@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Fusion;
 using TMPro;
@@ -7,8 +9,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class EntryPoint : MonoBehaviour
-	, IPlayerJoined
-	, IPlayerLeft
 {
 	public static EntryPoint Instance;
 	public static readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
@@ -23,14 +23,17 @@ public class EntryPoint : MonoBehaviour
 	void Awake()
 	{
 		Instance = this;
-		_networkButton.onClick.AddListener(ToggleNetwork);
+		_networkButton.onClick.AddListener(NetworkToggle);
 		_networkButton.gameObject.SetActive(true);
 		_networkText.text = "network";
+
+		QualitySettings.vSyncCount = 0;
+		Application.targetFrameRate = 60;
 	}
 
 	void OnDestroy()
 	{
-		_networkButton.onClick.RemoveListener(ToggleNetwork);
+		_networkButton.onClick.RemoveListener(NetworkToggle);
 		if (Instance == this)
 			Instance = null;
 	}
@@ -45,55 +48,75 @@ public class EntryPoint : MonoBehaviour
 		}
 	}
 
-	private async void ToggleNetwork()
+	private void NetworkToggle()
 	{
-		Debug.Log("ToggleNetwork invoked");
-		_networkButton.interactable = false;
-		_networkText.text = "...";
-
 		var ct = destroyCancellationToken;
-
-		if (_networkRunner)
+		Utils.RunSafeUniTask(NetworkToggleAsync()).Forget();
+		async UniTask NetworkToggleAsync()
 		{
-			await _networkRunner.Shutdown();
-			_networkRunner = null;
-		}
-		else
-		{
-			var activeScene = SceneManager.GetActiveScene();
+			_networkButton.interactable = false;
+			_networkText.text = "...";
 
-			var instance = Instantiate(_networkRunnerPrefab);
-			var result = await instance.StartGame(new StartGameArgs {
-				GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
-				Scene = SceneRef.FromIndex(activeScene.buildIndex),
-				OnGameStarted = runner => { _networkRunner = runner; },
-			});
-			Debug.Log(result);
-			if (result.Ok && !ct.IsCancellationRequested)
+			if (_networkRunner)
 			{
-				Instantiate(_avatarManagerPrefab); // @note should it be spawned before `StartGame` instead ?
-				// @note should it just be set to `instance` right away or after at least after `StartGame` ?
-				await UniTask.WaitUntil(() => _networkRunner || ct.IsCancellationRequested);
+				await _networkRunner.Shutdown();
+				ct.ThrowIfCancellationRequested();
+				_networkRunner = null;
 			}
-		}
+			else
+			{
+				var activeScene = SceneManager.GetActiveScene();
+				var instance = Instantiate(_networkRunnerPrefab);
+				var manager = Instantiate(_avatarManagerPrefab);
+				var result = await instance.StartGame(new StartGameArgs {
+					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
+					Scene = SceneRef.FromIndex(activeScene.buildIndex),
+					OnGameStarted = runner => { _networkRunner = runner; },
+				});
+				if (result.Ok) await NetworkFinalize(ct);
+			}
 
-		if (!ct.IsCancellationRequested)
-		{
 			var nextMenuState = !_networkRunner;
 			_networkButton.gameObject.SetActive(nextMenuState);
 			GameCursor.Instance.SetState(nextMenuState);
 
 			_networkText.text = _networkRunner ? "shutdown" : "start";
 			_networkButton.interactable = true;
-			Debug.Log("ToggleNetwork completed");
 		}
 	}
 
-	void IPlayerJoined.PlayerJoined(PlayerRef player)
+	private void NetworkMigrate(NetworkRunner prevRunner, HostMigrationToken hostMigrationToken)
 	{
+		// @note see "network project config -> host migration update delay" for the granularity
+		// of synchronizations. it is expected to lose some progress on an uncontrolled migration
+		var ct = destroyCancellationToken;
+		Utils.RunSafeUniTask(NetworkMigrateAsync()).Forget();
+		async UniTask NetworkMigrateAsync()
+		{
+			await prevRunner.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
+			await prevRunner.Shutdown(shutdownReason: ShutdownReason.HostMigration);
+			var activeScene = SceneManager.GetActiveScene();
+			var instance = Instantiate(_networkRunnerPrefab);
+			var manager = Instantiate(_avatarManagerPrefab);
+			var result = await instance.StartGame(new StartGameArgs {
+				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
+				Scene = SceneRef.FromIndex(activeScene.buildIndex),
+				OnGameStarted = runner => { _networkRunner = runner; },
+				HostMigrationResume = manager.NetworkResume,
+			});
+			if (result.Ok)
+			{
+				await instance.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
+				await NetworkFinalize(ct);
+			}
+		}
 	}
 
-	void IPlayerLeft.PlayerLeft(PlayerRef player)
+	private async UniTask NetworkFinalize(CancellationToken ct)
 	{
+		ct.ThrowIfCancellationRequested();
+		if (!_networkRunner) await UniTask.WaitUntil(() => _networkRunner, cancellationToken: ct);
+		var events = _networkRunner.GetComponent<NetworkEvents>();
+		events.OnHostMigration.AddListener(NetworkMigrate);
 	}
 }
