@@ -7,7 +7,8 @@ public class GameCursor : MonoBehaviour
 
 	[SerializeField] SpriteRenderer _visuals;
 
-	private static Rect ScreenRect => new Rect(Vector2.zero, new Vector2(Screen.width - 1, Screen.height - 1));
+	private static Vector2 ScreenSize => new Vector2(Screen.width, Screen.height);
+	private static Rect ScreenRect => new Rect(Vector2.zero, ScreenSize);
 	private static bool InBounds(Vector2 point) => ScreenRect.Contains(point);
 
 	void Awake()
@@ -49,6 +50,15 @@ public class GameCursor : MonoBehaviour
 		Cursor.lockState = state
 			? CursorLockMode.Confined
 			: CursorLockMode.None;
+	}
+
+	public Vector2 GetCenterOffsetRelative()
+	{
+		var mouse = Mouse.current;
+		var screenSize = ScreenSize;
+		var position = mouse.position.ReadValue();
+		var offset = position - screenSize / 2;
+		return new Vector2(offset.x / screenSize.x, offset.y / screenSize.y);
 	}
 
 	private void SetCustomVisible(bool state)
