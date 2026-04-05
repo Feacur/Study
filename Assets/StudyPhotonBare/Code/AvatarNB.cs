@@ -22,6 +22,7 @@ public class AvatarNB : NetworkBehaviour
 
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
+	private Vector3 _cameraSmoothDamp;
 	// private ChangeDetector _changeDetector; // @note alternatively use `[OnChangedRender]`
 
 	public override void Spawned()
@@ -97,6 +98,14 @@ public class AvatarNB : NetworkBehaviour
 		// 			break;
 		// 	}
 		// }
+
+		if (HasInputAuthority)
+		{
+			var rig = GameCameraRig.Instance;
+			var centerOffset = GameCursor.Instance.GetCenterOffsetRelative();
+			var targetPosition = transform.position + Translate2D(centerOffset * 2);
+			rig.transform.position = Vector3.SmoothDamp(rig.transform.position, targetPosition, ref _cameraSmoothDamp, Time.unscaledDeltaTime);
+		}
 	}
 
 	void IBeforeUpdate.BeforeUpdate()
