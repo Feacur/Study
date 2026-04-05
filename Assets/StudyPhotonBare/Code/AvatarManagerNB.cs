@@ -4,13 +4,13 @@ using Fusion;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkObject))]
-public class AvatarManager : NetworkBehaviour
+public class AvatarManagerNB : NetworkBehaviour
 	, IPlayerJoined
 	, IPlayerLeft
 {
-	public static AvatarManager Instance;
+	public static AvatarManagerNB Instance { get; private set; }
 
-	[SerializeField] Avatar _avatarPrefab;
+	[SerializeField] AvatarNB _avatarPrefab;
 
 	private readonly Dictionary<int, NetworkObject> _instances = new Dictionary<int, NetworkObject>();
 

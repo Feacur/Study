@@ -1,0 +1,168 @@
+using Fusion;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(NetworkTransform))]
+public class AvatarNB : NetworkBehaviour
+	, IBeforeUpdate
+{
+	[Header("Assets")]
+	[SerializeField] ArrowNB _arrowPrefab;
+
+	[Header("Visuals")]
+	[SerializeField] TMP_Text _lifetimeLabel;
+	[SerializeField] Transform _aimTransform;
+
+
+	[Networked, OnChangedRender(nameof(CRLifetime))] int NWLifetime { get; set; }
+	[Networked, OnChangedRender(nameof(CRAim))] Vector2 NWAim { get; set; }
+	[Networked] TickTimer NWArrowCooldown { get; set; }
+
+	private bool _inputIsConsumed;
+	private InputData _inputAccumulated;
+	// private ChangeDetector _changeDetector; // @note alternatively use `[OnChangedRender]`
+
+	public override void Spawned()
+	{
+		// _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+		if (HasInputAuthority)
+		{
+			var events = Runner.GetComponent<NetworkEvents>();
+			events.OnInput.AddListener(InputConsume);
+		}
+	}
+
+	public override void Despawned(NetworkRunner runner, bool hasState)
+	{
+		if (HasInputAuthority)
+		{
+			var events = Runner.GetComponent<NetworkEvents>();
+			events.OnInput.RemoveListener(InputConsume);
+		}
+	}
+
+	public override void FixedUpdateNetwork()
+	{
+		if (HasStateAuthority)
+		{
+			NWLifetime += 1;
+		}
+
+		if (GetInput(out InputData input))
+		{
+			input.Normalize();
+
+			if (input.aim.x != 0 && input.aim.y != 0)
+			{
+				NWAim = input.aim;
+			}
+
+			{
+				var deltaMove = input.move * (10 * Runner.DeltaTime);
+				transform.position += Translate2D(deltaMove);
+			}
+
+			// @note spawn authority belongs either to the host/server in the corresponding mode
+			// or to the local player in shared mode
+			if (HasStateAuthority && NWArrowCooldown.ExpiredOrNotRunning(Runner) && input.buttons.IsSet(InputData.ACTION_ATTACK))
+			{ // player would expect to shoot at where they've aimed; either before or after transform changes
+				transform.GetPositionAndRotation(out var position, out var _);
+				var direction = Translate2D(NWAim);
+				var rotation = Quaternion.FromToRotation(Vector3.right, direction);
+				NWArrowCooldown = TickTimer.CreateFromSeconds(Runner, 2);
+				Runner.Spawn(_arrowPrefab,
+					inputAuthority: Object.InputAuthority,
+					position: position + direction,
+					rotation: rotation,
+					onBeforeSpawned: (runner, instanceObject) => {
+						var arrownb = instanceObject.GetComponent<ArrowNB>();
+						arrownb.Init();
+					}
+				);
+			}
+		}
+	}
+
+	public override void Render()
+	{
+		// var interpolator = new NetworkBehaviourBufferInterpolator(this);
+		// foreach (var change in _changeDetector.DetectChanges(this))
+		// {
+		// 	switch (change)
+		// 	{
+		// 		case nameof(Lifetime):
+		// 			ChangeRenderLifetime();
+		// 			break;
+		// 	}
+		// }
+	}
+
+	void IBeforeUpdate.BeforeUpdate()
+	{
+		if (HasInputAuthority && !EntryPoint.Instance.IsMenuVisible)
+		{
+			if (_inputIsConsumed)
+			{
+				_inputIsConsumed = false;
+				_inputAccumulated = default;
+			}
+
+			if (Cursor.lockState != CursorLockMode.None)
+			{
+				var keyboard = Keyboard.current;
+				var mouse = Mouse.current;
+
+				{
+					var moveFrame = Vector2.zero;
+					moveFrame.x += keyboard.dKey.isPressed ? 1 : 0;
+					moveFrame.x -= keyboard.aKey.isPressed ? 1 : 0;
+					moveFrame.y += keyboard.wKey.isPressed ? 1 : 0;
+					moveFrame.y -= keyboard.sKey.isPressed ? 1 : 0;
+					_inputAccumulated.move += moveFrame;
+				}
+
+				if (mouse.leftButton.wasPressedThisFrame)
+				{
+					_inputAccumulated.buttons.Set(InputData.ACTION_ATTACK, true);
+				}
+
+				{
+					var aim = GameCursor.Instance.transform.position - transform.position;
+					_inputAccumulated.aim = aim;
+				}
+			}
+		}
+	}
+
+	private void CRLifetime() => 
+		_lifetimeLabel.text = (NWLifetime / 10).ToString();
+
+	private void CRAim() => 
+		_aimTransform.localPosition = Translate2D(NWAim * 0.5f);
+
+	private Vector3 Translate2D(Vector2 input) =>
+		new Vector3(input.x, input.y, 0);
+
+	private void InputConsume(NetworkRunner runner, NetworkInput input)
+	{
+		_inputIsConsumed = true;
+		input.Set(_inputAccumulated);
+	}
+
+	private struct InputData : INetworkInput
+	{
+		public const byte ACTION_ATTACK = 1;
+
+		public Vector2 move;
+		public NetworkButtons buttons;
+		public Vector2 aim;
+
+		public void Normalize()
+		{
+			move.Normalize();
+			aim.Normalize();
+		}
+	}
+}
