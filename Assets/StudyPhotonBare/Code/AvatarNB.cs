@@ -69,17 +69,17 @@ public class AvatarNB : NetworkBehaviour
 			// or to the local player in shared mode
 			if (HasStateAuthority && NWArrowCooldown.ExpiredOrNotRunning(Runner) && input.buttons.IsSet(InputData.ACTION_ATTACK))
 			{ // player would expect to shoot at where they've aimed; either before or after transform changes
-				transform.GetPositionAndRotation(out var position, out var _);
+				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Translate2D(NWAim);
+				var position = avatarPosition + direction;
 				var rotation = Quaternion.FromToRotation(Vector3.right, direction);
 				NWArrowCooldown = TickTimer.CreateFromSeconds(Runner, 2);
 				Runner.Spawn(_arrowPrefab,
 					inputAuthority: Object.InputAuthority,
-					position: position + direction,
-					rotation: rotation,
+					position: position, rotation: rotation,
 					onBeforeSpawned: (runner, instanceObject) => {
 						var arrownb = instanceObject.GetComponent<ArrowNB>();
-						arrownb.Init();
+						arrownb.Init(position, direction);
 					}
 				);
 			}
