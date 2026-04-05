@@ -1,5 +1,4 @@
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Fusion;
 using TMPro;
@@ -13,11 +12,12 @@ public class EntryPoint : MonoBehaviour
 	public static EntryPoint Instance;
 	public static readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
 
-	[SerializeField] AvatarManager _avatarManagerPrefab;
-	[SerializeField] NetworkRunner _networkRunnerPrefab;
+	[SerializeField] AvatarManager _avatarManagerPrefab; // @note network behaviours are destroyed by default, but can be pooled
+	[SerializeField] NetworkRunner _networkRunnerPrefab; // @note network runner should not be reused
 	[SerializeField] Button _networkButton;
 	[SerializeField] TMP_Text _networkText;
 
+	private INetworkSceneManager _sceneManager;
 	private NetworkRunner _networkRunner;
 
 	void Awake()
@@ -26,6 +26,9 @@ public class EntryPoint : MonoBehaviour
 		_networkButton.onClick.AddListener(NetworkToggle);
 		_networkButton.gameObject.SetActive(true);
 		_networkText.text = "network";
+
+		_sceneManager = GetComponent<INetworkSceneManager>();
+		if (_sceneManager == null) _sceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>();
 
 		QualitySettings.vSyncCount = 0;
 		Application.targetFrameRate = 60;
@@ -66,13 +69,14 @@ public class EntryPoint : MonoBehaviour
 			else
 			{
 				var activeScene = SceneManager.GetActiveScene();
-				var instance = Instantiate(_networkRunnerPrefab);
+				var instance = CreateRunner();
 				var manager = Instantiate(_avatarManagerPrefab);
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
-					Scene = SceneRef.FromIndex(activeScene.buildIndex),
+					SceneManager = _sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
 					OnGameStarted = runner => { _networkRunner = runner; },
 				});
+
 				if (result.Ok) await NetworkFinalize(ct);
 			}
 
@@ -95,21 +99,34 @@ public class EntryPoint : MonoBehaviour
 		{
 			await prevRunner.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
 			await prevRunner.Shutdown(shutdownReason: ShutdownReason.HostMigration);
+
 			var activeScene = SceneManager.GetActiveScene();
-			var instance = Instantiate(_networkRunnerPrefab);
+			var instance = CreateRunner();
 			var manager = Instantiate(_avatarManagerPrefab);
 			var result = await instance.StartGame(new StartGameArgs {
 				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
-				Scene = SceneRef.FromIndex(activeScene.buildIndex),
+				SceneManager = _sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
 				OnGameStarted = runner => { _networkRunner = runner; },
 				HostMigrationResume = manager.NetworkResume,
 			});
+
 			if (result.Ok)
 			{
 				await instance.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
 				await NetworkFinalize(ct);
 			}
 		}
+	}
+
+	private NetworkRunner CreateRunner()
+	{
+		var instance = Instantiate(_networkRunnerPrefab);
+		instance.ProvideInput = true;
+		
+		if (instance.gameObject.GetComponent<INetworkRunnerCallbacks>() == null)
+			instance.gameObject.AddComponent<NetworkEvents>();
+
+		return instance;
 	}
 
 	private async UniTask NetworkFinalize(CancellationToken ct)

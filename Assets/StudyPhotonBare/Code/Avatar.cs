@@ -10,16 +10,15 @@ public class Avatar : NetworkBehaviour
 {
 	[SerializeField] TMP_Text _lifetimeLabel;
 
-	[Networked] private int Lifetime { get; set; }
+	[Networked, OnChangedRender(nameof(UpdateLifetimeLabel))] private int Lifetime { get; set; }
 
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
-	private ChangeDetector _changeDetector;
-	private float Speed => 10 * Time.unscaledDeltaTime;
+	// private ChangeDetector _changeDetector; // @note alternatively use `[OnChangedRender]`
 
 	public override void Spawned()
 	{
-		_changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+		// _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
 		if (HasInputAuthority)
 		{
 			var events = Runner.GetComponent<NetworkEvents>();
@@ -41,26 +40,30 @@ public class Avatar : NetworkBehaviour
 		if (GetInput(out InputData input))
 		{
 			Lifetime += 1;
-			var move = new Vector3(input.move.x, input.move.y, 0);
-			transform.position += move;
+			input.Normalize();
+			input.move *= 10 * Runner.DeltaTime;
+			transform.position += new Vector3(input.move.x, input.move.y);
 		}
 	}
 
-	public override void Render()
-	{
-		foreach (var change in _changeDetector.DetectChanges(this))
-		{
-			switch (change)
-			{
-				case nameof(Lifetime):
-					UpdateLifetimeLabel();
-					break;
-			}
-		}
-	}
+	// public override void Render()
+	// {
+	// 	// var interpolator = new NetworkBehaviourBufferInterpolator(this);
+	// 	// foreach (var change in _changeDetector.DetectChanges(this))
+	// 	// {
+	// 	// 	switch (change)
+	// 	// 	{
+	// 	// 		case nameof(Lifetime):
+	// 	// 			UpdateLifetimeLabel();
+	// 	// 			break;
+	// 	// 	}
+	// 	// }
+	// }
 
 	void IBeforeUpdate.BeforeUpdate()
 	{
+		if (!HasInputAuthority) return;
+
 		if (_inputIsConsumed)
 		{
 			_inputIsConsumed = false;
@@ -71,10 +74,10 @@ public class Avatar : NetworkBehaviour
 		{
 			var keyboard = Keyboard.current;
 			var moveFrame = Vector2.zero;
-			moveFrame.x += keyboard.dKey.isPressed ? Speed : 0;
-			moveFrame.x -= keyboard.aKey.isPressed ? Speed : 0;
-			moveFrame.y += keyboard.wKey.isPressed ? Speed : 0;
-			moveFrame.y -= keyboard.sKey.isPressed ? Speed : 0;
+			moveFrame.x += keyboard.dKey.isPressed ? 1 : 0;
+			moveFrame.x -= keyboard.aKey.isPressed ? 1 : 0;
+			moveFrame.y += keyboard.wKey.isPressed ? 1 : 0;
+			moveFrame.y -= keyboard.sKey.isPressed ? 1 : 0;
 			_inputAccumulated.move += moveFrame;
 		}
 	}
@@ -91,5 +94,10 @@ public class Avatar : NetworkBehaviour
 	private struct InputData : INetworkInput
 	{
 		public Vector2 move;
+
+		public void Normalize()
+		{
+			move.Normalize();
+		}
 	}
 }
