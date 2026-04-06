@@ -7,11 +7,14 @@ public class ArrowsNB : NetworkBehaviour
 	private const int ARROWS_LIMIT = 4;
 
 	[SerializeField] GameObject _arrowPrefab;
+	[SerializeField] int _arrowLifeSeconds = 1;
+	[SerializeField] float _arrowSpeed = 20;
 
+	[Networked] int NWArrowsCooldown { get; set; }
 	[Networked, Capacity(ARROWS_LIMIT)] NetworkArray<Arrow> NWArrows { get; }
 	[Networked] int NWArrowsWrite { get; set; }
 
-	private Instance[] _instances = new Instance[ARROWS_LIMIT];
+	private readonly Instance[] _instances = new Instance[ARROWS_LIMIT];
 
 	void Awake()
 	{
@@ -25,6 +28,9 @@ public class ArrowsNB : NetworkBehaviour
 
 	public void Spawn(Vector3 position, Vector3 direction)
 	{
+		if (NWArrowsCooldown > Runner.Tick) return;
+		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + _arrowLifeSeconds * Runner.TickRate / ARROWS_LIMIT);
+
 		NWArrows.Set(NWArrowsWrite, new Arrow {
 			InitTick = Runner.Tick,
 			InitPosition = position,
@@ -45,7 +51,7 @@ public class ArrowsNB : NetworkBehaviour
 			var arrow = NWArrows[i];
 			if (!arrow.IsAlive) continue;
 			var elapsed = Runner.Tick - arrow.InitTick;
-			if (elapsed > Runner.TickRate)
+			if (elapsed > _arrowLifeSeconds * Runner.TickRate)
 				NWArrows.Set(i, default);
 		}
 	}
@@ -80,7 +86,7 @@ public class ArrowsNB : NetworkBehaviour
 	private void GetPosition(in Arrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
 	{
 		position = elapsed > 0
-			? arrow.InitPosition + (Vector3)arrow.InitDirection * (elapsed * 10)
+			? arrow.InitPosition + (Vector3)arrow.InitDirection * (_arrowSpeed * elapsed)
 			: arrow.InitPosition;
 		rotation = Quaternion.FromToRotation(Vector3.right, arrow.InitDirection);
 	}
