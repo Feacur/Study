@@ -816,7 +816,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: StudyPhotonBare::ArrowsNB
   _arrowLifeSeconds: 1
   _arrowSpeed: 20
-  contactFilter:
+  _contactFilter:
     useTriggers: 0
     useLayerMask: 1
     useDepth: 0

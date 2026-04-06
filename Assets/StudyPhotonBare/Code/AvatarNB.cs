@@ -35,6 +35,8 @@ public class AvatarNB : NetworkBehaviour
 	private Vector3 _cameraSmoothDamp;
 	// private ChangeDetector _changeDetector;
 
+	private bool AreControlsEnabled => HasInputAuthority && !EntryPoint.Instance.IsMenuVisible;
+
 	public void SAInit()
 	{
 		NWHitpoints = HITPOINTS_MAX;
@@ -117,7 +119,7 @@ public class AvatarNB : NetworkBehaviour
 			_aimTransform.localPosition = Vector3.MoveTowards(_aimTransform.localPosition, target, distance);
 		}
 
-		if (HasInputAuthority)
+		if (AreControlsEnabled)
 		{
 			var rig = GameCameraRig.Instance;
 			var centerOffset = GameCursor.Instance.GetCenterOffsetRelative();
@@ -128,7 +130,7 @@ public class AvatarNB : NetworkBehaviour
 
 	void IBeforeUpdate.BeforeUpdate()
 	{
-		if (HasInputAuthority && !EntryPoint.Instance.IsMenuVisible)
+		if (AreControlsEnabled)
 		{
 			if (_inputIsConsumed)
 			{
