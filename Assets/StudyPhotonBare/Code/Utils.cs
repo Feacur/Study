@@ -1,5 +1,5 @@
 using System;
-using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
 using Fusion;
 using UnityEngine;
 
@@ -9,27 +9,18 @@ public static class Utils
 	public static Rect ScreenRect => new Rect(Vector2.zero, ScreenSize);
 	public static bool InBounds(Vector2 point) => ScreenRect.Contains(point);
 
-	public static async UniTaskVoid RunSafeUniTask(UniTask task)
+	public static async void CatchCancel(this Task task)
 	{
+		// @note no much purpose here, minimally mimics `UniTask`'s `.Forget` extension,
+		// specifically catches async exceptions instead of abandoning them
+		// to the void of a scheduler
 		try
 		{
 			await task;
 		}
 		catch (OperationCanceledException ex)
 		{
-			Debug.Log("RunTaskSafe: " + ex.Message);
-		}
-	}
-
-	public static async UniTaskVoid RunSafeUniTask<T>(UniTask<T> task)
-	{
-		try
-		{
-			await task;
-		}
-		catch (OperationCanceledException ex)
-		{
-			Debug.Log("RunTaskSafe: " + ex.Message);
+			Debug.Log("CatchCancel: " + ex.Message);
 		}
 	}
 
