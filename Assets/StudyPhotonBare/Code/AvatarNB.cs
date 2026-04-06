@@ -11,7 +11,7 @@ public class AvatarNB : NetworkBehaviour
 	[Header("Systems")]
 	[SerializeField] ArrowsNB _arrows;
 
-	[Header("Parameters")]
+	[Header("Logics")]
 	[SerializeField] float _speed = 10;
 
 	[Header("Visuals")]
@@ -20,7 +20,7 @@ public class AvatarNB : NetworkBehaviour
 	[SerializeField] TMP_Text _lifetimeLabel;
 	[SerializeField] Transform _aimTransform;
 
-
+	[Header("Networked")]
 	[Networked, OnChangedRender(nameof(NWLifetimeCR))] int NWLifetime { get; set; }
 	[Networked] Vector2 NWAim { get; set; }
 

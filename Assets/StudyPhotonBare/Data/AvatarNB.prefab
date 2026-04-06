@@ -469,6 +469,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 187d9d19486bda34297a11b31adc4aef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: StudyPhotonBare::ArrowsNB
-  _arrowPrefab: {fileID: 7740408432832549357, guid: 5f19fa01ca5ee7d4daf5c19b05fd1aa8, type: 3}
   _arrowLifeSeconds: 1
   _arrowSpeed: 20
+  _arrowPrefab: {fileID: 7740408432832549357, guid: 5f19fa01ca5ee7d4daf5c19b05fd1aa8, type: 3}
