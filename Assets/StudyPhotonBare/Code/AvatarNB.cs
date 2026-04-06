@@ -69,9 +69,7 @@ public class AvatarNB : NetworkBehaviour
 				transform.position += Translate2D(deltaMove);
 			}
 
-			// @note spawn authority belongs either to the host/server in the corresponding mode
-			// or to the local player in shared mode
-			if (HasStateAuthority && input.buttons.IsSet(InputData.ACTION_ATTACK))
+			if (input.buttons.IsSet(InputData.ACTION_ATTACK))
 			{ // player would expect to shoot at where they've aimed; either before or after transform changes
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Translate2D(NWAim);
