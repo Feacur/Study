@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ public class ArrowsNB : NetworkBehaviour
 	[Header("Logics")]
 	[SerializeField] int _arrowLifeSeconds = 1;
 	[SerializeField] float _arrowSpeed = 20;
+	[SerializeField] ContactFilter2D contactFilter;
 
 	[Header("Visuals")]
 	[SerializeField] GameObject _arrowPrefab;
@@ -23,6 +25,8 @@ public class ArrowsNB : NetworkBehaviour
 	[Networked, Capacity(ARROWS_LIMIT)] NetworkArray<Arrow> NWArrows { get; }
 	[Networked] int NWArrowsWrite { get; set; }
 
+	[Header("Private")]
+	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
 	private readonly Instance[] _instances = new Instance[ARROWS_LIMIT];
 
 	void Awake()
@@ -51,19 +55,35 @@ public class ArrowsNB : NetworkBehaviour
 	public override void FixedUpdateNetwork()
 	{
 		// @todo compact alive set or have read-write pointers
+		var scene = Runner.GetPhysicsScene2D();
 		for (int i = 0; i < NWArrows.Length; i++)
 		{
 			var arrow = NWArrows[i];
 			if (!arrow.IsAlive) continue;
 
 			var elapsed = Runner.Tick - arrow.InitTick;
-			if (elapsed < 0) continue;
+			if (elapsed < 1) continue;
 
-			// @todo check collision
-			// GetPositionTicks(in arrow, elapsed,     out var positionCurr, out var _);
-			// GetPositionTicks(in arrow, elapsed + 1, out var positionNext, out var _);
+			GetPositionTicks(in arrow, elapsed - 1, out var positionCurr, out var _);
+			GetPositionTicks(in arrow, elapsed,     out var positionNext, out var _);
+			var direction = positionNext - positionCurr;
 
-			if (elapsed > _arrowLifeSeconds * Runner.TickRate)
+			var hitSomething = false;
+			var hitsCount = scene.Raycast(positionCurr, direction, direction.magnitude, contactFilter, _hits);
+			for (int hitIndex = 0; hitIndex < hitsCount; hitIndex++)
+			{
+				var hit = _hits[hitIndex];
+				var avatar = hit.collider
+					? hit.collider.GetComponentInParent<AvatarNB>()
+					: null;
+				if (avatar && avatar.Object.InputAuthority != Object.InputAuthority)
+				{
+					avatar.Hit();
+					hitSomething = true;
+				}
+			}
+
+			if (hitSomething || elapsed > _arrowLifeSeconds * Runner.TickRate)
 				NWArrows.Set(i, default);
 		}
 	}

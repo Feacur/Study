@@ -8,6 +8,8 @@ using UnityEngine.InputSystem;
 public class AvatarNB : NetworkBehaviour
 	, IBeforeUpdate
 {
+	private const int HITPOINTS_MAX = 3;
+
 	[Header("Systems")]
 	[SerializeField] ArrowsNB _arrows;
 
@@ -18,25 +20,44 @@ public class AvatarNB : NetworkBehaviour
 	[SerializeField] float _cameraOffset = 10;
 	[SerializeField] float _crAimSpeed = 5;
 	[SerializeField] TMP_Text _lifetimeLabel;
+	[SerializeField] TMP_Text _hitpointsLabel;
 	[SerializeField] Transform _aimTransform;
 
 	[Header("Networked")]
 	[Networked, OnChangedRender(nameof(NWLifetimeCR))] int NWLifetime { get; set; }
+	[Networked, OnChangedRender(nameof(NWHitpointsCR))] int NWHitpoints { get; set; }
 	[Networked] Vector2 NWAim { get; set; }
 
+	[Header("Private")]
+	private NetworkTransform _networkTransform;
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
 	private Vector3 _cameraSmoothDamp;
-	private ChangeDetector _changeDetector;
+	// private ChangeDetector _changeDetector;
+
+	public void Init()
+	{
+		NWHitpoints = HITPOINTS_MAX;
+	}
+
+	void Awake()
+	{
+		_networkTransform = GetComponent<NetworkTransform>();
+	}
 
 	public override void Spawned()
 	{
-		_changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+		name = $"Avatar {Object.InputAuthority}";
+		// _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
 		if (HasInputAuthority)
 		{
 			var events = Runner.GetComponent<NetworkEvents>();
 			events.OnInput.AddListener(InputConsume);
 		}
+
+		NWLifetimeCR();
+		NWHitpointsCR();
 	}
 
 	public override void Despawned(NetworkRunner runner, bool hasState)
@@ -142,8 +163,23 @@ public class AvatarNB : NetworkBehaviour
 		}
 	}
 
+	public void Hit()
+	{
+		var nextHitpoints = NWHitpoints - 1;
+		if (nextHitpoints <= 0)
+		{ // @todo respawn
+			nextHitpoints = HITPOINTS_MAX;
+			NWLifetime = 0;
+			_networkTransform.Teleport(Vector3.zero);
+		}
+		NWHitpoints = nextHitpoints;
+	}
+
 	private void NWLifetimeCR() => 
 		_lifetimeLabel.text = (NWLifetime / 10).ToString();
+
+	private void NWHitpointsCR() => 
+		_hitpointsLabel.text = NWHitpoints.ToString();
 
 	private Vector3 Translate2D(Vector2 input) =>
 		new Vector3(input.x, input.y, 0);

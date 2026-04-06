@@ -9,8 +9,10 @@ public class AvatarManagerNB : NetworkBehaviour
 {
 	public static AvatarManagerNB Instance { get; private set; }
 
+	[Header("Systems")]
 	[SerializeField] AvatarNB _avatarPrefab;
 
+	[Header("Private")]
 	private readonly Dictionary<int, NetworkObject> _instances = new Dictionary<int, NetworkObject>();
 
 	void Awake()
@@ -39,6 +41,9 @@ public class AvatarManagerNB : NetworkBehaviour
 			onBeforeSpawned: (runner, instanceObject) => {
 				Runner.SetPlayerObject(player, instanceObject);
 				_instances.Add(token, instanceObject);
+
+				var avatar = instanceObject.GetComponent<AvatarNB>();
+				avatar.Init();
 			}
 		);
 		Runner.PushHostMigrationSnapshot();
@@ -102,6 +107,9 @@ public class AvatarManagerNB : NetworkBehaviour
 				onBeforeSpawned: (runner, instanceObject) => {
 					runner.SetPlayerObject(prevObject.InputAuthority, instanceObject);
 					_instances[token] = instanceObject;
+
+					var avatar = instanceObject.GetComponent<AvatarNB>();
+					avatar.Init();
 
 					instanceObject.CopyStateFrom(prevObject);
 
