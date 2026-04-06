@@ -29,17 +29,7 @@ public class ArrowsNB : NetworkBehaviour
 	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
 	private readonly Instance[] _instances = new Instance[ARROWS_LIMIT];
 
-	void Awake()
-	{
-		// @todo instantiate on demand, pool
-		for (int i = 0; i < _instances.Length; i++)
-		{
-			var go = Instantiate(_arrowPrefab); go.SetActive(false);
-			_instances[i] = new Instance {GO = go};
-		}
-	}
-
-	public void Spawn(Vector3 position, Vector3 direction)
+	public void SASpawn(Vector3 position, Vector3 direction)
 	{
 		if (NWArrowsCooldown > Runner.Tick) return;
 		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + _arrowLifeSeconds * Runner.TickRate / ARROWS_LIMIT);
@@ -50,6 +40,16 @@ public class ArrowsNB : NetworkBehaviour
 			InitDirection = direction,
 		});
 		NWArrowsWrite = (NWArrowsWrite + 1) % NWArrows.Length;
+	}
+
+	void Awake()
+	{
+		// @todo instantiate on demand, pool
+		for (int i = 0; i < _instances.Length; i++)
+		{
+			var go = Instantiate(_arrowPrefab); go.SetActive(false);
+			_instances[i] = new Instance {GO = go};
+		}
 	}
 
 	public override void FixedUpdateNetwork()
@@ -78,7 +78,7 @@ public class ArrowsNB : NetworkBehaviour
 					: null;
 				if (avatar && avatar.Object.InputAuthority != Object.InputAuthority)
 				{
-					avatar.Hit();
+					avatar.SAHit();
 					hitSomething = true;
 				}
 			}
