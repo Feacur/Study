@@ -12,11 +12,15 @@ public class EntryPoint : MonoBehaviour
 	public static EntryPoint Instance { get; private set; }
 	public static readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
 
+	[Header("Systems")]
 	[SerializeField] AvatarManagerNB _avatarManagerPrefab; // @note network behaviours are destroyed by default, but can be pooled
 	[SerializeField] NetworkRunner _networkRunnerPrefab; // @note network runner should not be reused
+
+	[Header("Visuals")]
 	[SerializeField] Button _networkButton;
 	[SerializeField] TMP_Text _networkText;
 
+	[Header("Private")]
 	private INetworkSceneManager _sceneManager;
 	private NetworkRunner _networkRunner;
 
