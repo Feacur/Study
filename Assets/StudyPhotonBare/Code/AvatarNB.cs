@@ -16,21 +16,22 @@ public class AvatarNB : NetworkBehaviour
 
 	[Header("Visuals")]
 	[SerializeField] float _cameraOffset = 10;
+	[SerializeField] float _crAimSpeed = 5;
 	[SerializeField] TMP_Text _lifetimeLabel;
 	[SerializeField] Transform _aimTransform;
 
 
-	[Networked, OnChangedRender(nameof(CRLifetime))] int NWLifetime { get; set; }
-	[Networked, OnChangedRender(nameof(CRAim))] Vector2 NWAim { get; set; }
+	[Networked, OnChangedRender(nameof(NWLifetimeCR))] int NWLifetime { get; set; }
+	[Networked] Vector2 NWAim { get; set; }
 
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
 	private Vector3 _cameraSmoothDamp;
-	// private ChangeDetector _changeDetector; // @note alternatively use `[OnChangedRender]`
+	private ChangeDetector _changeDetector;
 
 	public override void Spawned()
 	{
-		// _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+		_changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
 		if (HasInputAuthority)
 		{
 			var events = Runner.GetComponent<NetworkEvents>();
@@ -87,11 +88,15 @@ public class AvatarNB : NetworkBehaviour
 		// {
 		// 	switch (change)
 		// 	{
-		// 		case nameof(Lifetime):
-		// 			ChangeRenderLifetime();
-		// 			break;
+		// 		case nameof(NWLifetime): NWLifetimeCR(); break;
 		// 	}
 		// }
+
+		{
+			var target = Translate2D(NWAim * 0.5f);
+			var distance = _crAimSpeed * Time.unscaledDeltaTime;
+			_aimTransform.localPosition = Vector3.MoveTowards(_aimTransform.localPosition, target, distance);
+		}
 
 		if (HasInputAuthority)
 		{
@@ -139,11 +144,8 @@ public class AvatarNB : NetworkBehaviour
 		}
 	}
 
-	private void CRLifetime() => 
+	private void NWLifetimeCR() => 
 		_lifetimeLabel.text = (NWLifetime / 10).ToString();
-
-	private void CRAim() => 
-		_aimTransform.localPosition = Translate2D(NWAim * 0.5f);
 
 	private Vector3 Translate2D(Vector2 input) =>
 		new Vector3(input.x, input.y, 0);

@@ -58,7 +58,10 @@ public class GameCursor : MonoBehaviour
 		var screenSize = ScreenSize;
 		var position = mouse.position.ReadValue();
 		var offset = position - screenSize / 2;
-		return new Vector2(offset.x / screenSize.x, offset.y / screenSize.y);
+		return new Vector2(
+			Mathf.Clamp(offset.x / screenSize.x, -0.5f, 0.5f),
+			Mathf.Clamp(offset.y / screenSize.y, -0.5f, 0.5f)
+		);
 	}
 
 	private void SetCustomVisible(bool state)

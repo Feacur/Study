@@ -454,6 +454,7 @@ MonoBehaviour:
   _arrows: {fileID: -3902008561165140810}
   _speed: 10
   _cameraOffset: 10
+  _crAimSpeed: 5
   _lifetimeLabel: {fileID: 6166162976407558309}
   _aimTransform: {fileID: 4011647915432533425}
 --- !u!114 &-3902008561165140810
