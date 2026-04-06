@@ -11,14 +11,17 @@ public class AvatarNB : NetworkBehaviour
 	[Header("Systems")]
 	[SerializeField] ArrowsNB _arrows;
 
+	[Header("Parameters")]
+	[SerializeField] float _speed = 10;
+
 	[Header("Visuals")]
+	[SerializeField] float _cameraOffset = 10;
 	[SerializeField] TMP_Text _lifetimeLabel;
 	[SerializeField] Transform _aimTransform;
 
 
 	[Networked, OnChangedRender(nameof(CRLifetime))] int NWLifetime { get; set; }
 	[Networked, OnChangedRender(nameof(CRAim))] Vector2 NWAim { get; set; }
-	[Networked] TickTimer NWArrowCooldown { get; set; }
 
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
@@ -61,18 +64,17 @@ public class AvatarNB : NetworkBehaviour
 			}
 
 			{
-				var deltaMove = input.move * (10 * Runner.DeltaTime);
+				var deltaMove = input.move * (_speed * Runner.DeltaTime);
 				transform.position += Translate2D(deltaMove);
 			}
 
 			// @note spawn authority belongs either to the host/server in the corresponding mode
 			// or to the local player in shared mode
-			if (HasStateAuthority && NWArrowCooldown.ExpiredOrNotRunning(Runner) && input.buttons.IsSet(InputData.ACTION_ATTACK))
+			if (HasStateAuthority && input.buttons.IsSet(InputData.ACTION_ATTACK))
 			{ // player would expect to shoot at where they've aimed; either before or after transform changes
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Translate2D(NWAim);
 				var position = avatarPosition + direction;
-				NWArrowCooldown = TickTimer.CreateFromSeconds(Runner, 2);
 				_arrows.Spawn(position: position, direction: direction);
 			}
 		}
@@ -95,7 +97,7 @@ public class AvatarNB : NetworkBehaviour
 		{
 			var rig = GameCameraRig.Instance;
 			var centerOffset = GameCursor.Instance.GetCenterOffsetRelative();
-			var targetPosition = transform.position + Translate2D(centerOffset * 2);
+			var targetPosition = transform.position + Translate2D(centerOffset * _cameraOffset);
 			rig.transform.position = Vector3.SmoothDamp(rig.transform.position, targetPosition, ref _cameraSmoothDamp, Time.unscaledDeltaTime);
 		}
 	}
