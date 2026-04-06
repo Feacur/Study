@@ -7,10 +7,6 @@ public class GameCursor : MonoBehaviour
 
 	[SerializeField] SpriteRenderer _visuals;
 
-	private static Vector2 ScreenSize => new Vector2(Screen.width, Screen.height);
-	private static Rect ScreenRect => new Rect(Vector2.zero, ScreenSize);
-	private static bool InBounds(Vector2 point) => ScreenRect.Contains(point);
-
 	void Awake()
 	{
 		Instance = this;
@@ -40,7 +36,7 @@ public class GameCursor : MonoBehaviour
 
 	#if UNITY_EDITOR
 		if (Cursor.lockState == CursorLockMode.None)
-			SetCustomVisible(InBounds(screenPosition));
+			SetCustomVisible(Utils.InBounds(screenPosition));
 	#endif
 	}
 
@@ -55,7 +51,7 @@ public class GameCursor : MonoBehaviour
 	public Vector2 GetCenterOffsetRelative()
 	{
 		var mouse = Mouse.current;
-		var screenSize = ScreenSize;
+		var screenSize = Utils.ScreenSize;
 		var position = mouse.position.ReadValue();
 		var offset = position - screenSize / 2;
 		return new Vector2(

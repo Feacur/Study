@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
@@ -27,7 +26,10 @@ public class AvatarManagerNB : NetworkBehaviour
 
 	void IPlayerJoined.PlayerJoined(PlayerRef player)
 	{
-		if (!HasStateAuthority) return;
+		// @note the trick is that this manager belongs to the local player,
+		// and in the shared topology we want to spawn only our avatar,
+		// while leaving the others to be replicated by the framework
+		if (!Utils.CanSpawn(Runner, player)) return;
 
 		var token = GetToken(Runner, player);
 		if (_instances.ContainsKey(token)) return;
@@ -44,8 +46,6 @@ public class AvatarManagerNB : NetworkBehaviour
 
 	void IPlayerLeft.PlayerLeft(PlayerRef player)
 	{
-		if (!HasStateAuthority) return;
-
 		var token = GetToken(Runner, player);
 		if (_instances.TryGetValue(token, out var instanceObject))
 			_instances.Remove(token);
@@ -56,8 +56,11 @@ public class AvatarManagerNB : NetworkBehaviour
 			if (instanceObject == null) return;
 		}
 
-		Runner.Despawn(instanceObject);
-		Runner.PushHostMigrationSnapshot();
+		if (instanceObject)
+		{
+			Runner.Despawn(instanceObject);
+			Runner.PushHostMigrationSnapshot();
+		}
 	}
 
 	private int GetToken(NetworkRunner runner, PlayerRef player)

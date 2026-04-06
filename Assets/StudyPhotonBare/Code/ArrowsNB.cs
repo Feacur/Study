@@ -4,6 +4,11 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class ArrowsNB : NetworkBehaviour
 {
+	// @note technically this can be a shared managing object,
+	// but then in shared topology we either need to chunk the
+	// arrows array per player or give on of them complete
+	// authority over the projectile - and then it's a mix
+	// of complete p2p and host/client variant. shady
 	private const int ARROWS_LIMIT = 4;
 
 	[Header("Logics")]
@@ -39,22 +44,25 @@ public class ArrowsNB : NetworkBehaviour
 			InitTick = Runner.Tick,
 			InitPosition = position,
 			InitDirection = direction,
-			IsAlive = true,
 		});
 		NWArrowsWrite = (NWArrowsWrite + 1) % NWArrows.Length;
 	}
 
 	public override void FixedUpdateNetwork()
 	{
-		// GetPosition(Runner.Tick, out var positionCurr);
-		// GetPosition(Runner.Tick + 1, out var positionNext);
-		// @todo check collision
 		// @todo compact alive set or have read-write pointers
 		for (int i = 0; i < NWArrows.Length; i++)
 		{
 			var arrow = NWArrows[i];
 			if (!arrow.IsAlive) continue;
+
 			var elapsed = Runner.Tick - arrow.InitTick;
+			if (elapsed < 0) continue;
+
+			// @todo check collision
+			// GetPositionTicks(in arrow, elapsed,     out var positionCurr, out var _);
+			// GetPositionTicks(in arrow, elapsed + 1, out var positionNext, out var _);
+
 			if (elapsed > _arrowLifeSeconds * Runner.TickRate)
 				NWArrows.Set(i, default);
 		}
@@ -66,32 +74,30 @@ public class ArrowsNB : NetworkBehaviour
 		{
 			var inst = _instances[i];
 			var arrow = NWArrows[i];
-			inst.GO.SetActive(arrow.IsAlive);
 			if (arrow.IsAlive)
 			{
 				var time = HasStateAuthority
 					? Runner.LocalRenderTime
 					: Runner.RemoteRenderTime;
 				var elapsed = time - arrow.InitTick * Runner.DeltaTime;
-				GetPosition(in arrow, elapsed, out var position, out var rotation);
+				GetPositionTime(in arrow, elapsed, out var position, out var rotation);
+
+				inst.GO.SetActive(elapsed >= 0); // @note: should be visible only with valid time
 				inst.GO.transform.SetPositionAndRotation(position, rotation);
 			}
+			else inst.GO.SetActive(false);
 		}
 	}
 
-	private void GetPosition(in Arrow arrow, int tick, out Vector3 position, out Quaternion rotation)
+	private void GetPositionTicks(in Arrow arrow, int elapsed, out Vector3 position, out Quaternion rotation)
 	{
-		var time = tick >= arrow.InitTick
-			? (tick - arrow.InitTick) * Runner.DeltaTime
-			: 0;
-		GetPosition(arrow, time, out position, out rotation);
+		var time = elapsed * Runner.DeltaTime;
+		GetPositionTime(arrow, time, out position, out rotation);
 	}
 
-	private void GetPosition(in Arrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
+	private void GetPositionTime(in Arrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
 	{
-		position = elapsed > 0
-			? arrow.InitPosition + (Vector3)arrow.InitDirection * (_arrowSpeed * elapsed)
-			: arrow.InitPosition;
+		position = arrow.InitPosition + (Vector3)arrow.InitDirection * (_arrowSpeed * elapsed);
 		rotation = Quaternion.FromToRotation(Vector3.right, arrow.InitDirection);
 	}
 
@@ -100,7 +106,8 @@ public class ArrowsNB : NetworkBehaviour
 		public int InitTick;
 		public Vector3Compressed InitPosition;
 		public Vector3Compressed InitDirection;
-		public NetworkBool IsAlive; // or an end tick if it can vary
+
+		public bool IsAlive => InitTick > 0;
 	}
 
 	private struct Instance
