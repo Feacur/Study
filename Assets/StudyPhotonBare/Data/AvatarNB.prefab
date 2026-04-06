@@ -375,6 +375,7 @@ GameObject:
   - component: {fileID: 5299366004340950498}
   - component: {fileID: 8118621868758754173}
   - component: {fileID: -913699937644366611}
+  - component: {fileID: -3902008561165140810}
   m_Layer: 0
   m_Name: AvatarNB
   m_TagString: Untagged
@@ -419,6 +420,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 8118621868758754173}
   - {fileID: -913699937644366611}
+  - {fileID: -3902008561165140810}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8118621868758754173
 MonoBehaviour:
@@ -449,6 +451,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c424e3348d4103746bdbc70fc3c17c70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: StudyPhotonBare::Avatar
-  _arrowPrefab: {fileID: 3041198005936247960, guid: 5f19fa01ca5ee7d4daf5c19b05fd1aa8, type: 3}
+  _arrows: {fileID: -3902008561165140810}
   _lifetimeLabel: {fileID: 6166162976407558309}
   _aimTransform: {fileID: 4011647915432533425}
+--- !u!114 &-3902008561165140810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7740408432832549357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 187d9d19486bda34297a11b31adc4aef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: StudyPhotonBare::ArrowsNB
+  _arrowPrefab: {fileID: 7740408432832549357, guid: 5f19fa01ca5ee7d4daf5c19b05fd1aa8, type: 3}

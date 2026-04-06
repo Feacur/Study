@@ -8,8 +8,8 @@ using UnityEngine.InputSystem;
 public class AvatarNB : NetworkBehaviour
 	, IBeforeUpdate
 {
-	[Header("Assets")]
-	[SerializeField] ArrowNB _arrowPrefab;
+	[Header("Systems")]
+	[SerializeField] ArrowsNB _arrows;
 
 	[Header("Visuals")]
 	[SerializeField] TMP_Text _lifetimeLabel;
@@ -72,16 +72,8 @@ public class AvatarNB : NetworkBehaviour
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Translate2D(NWAim);
 				var position = avatarPosition + direction;
-				var rotation = Quaternion.FromToRotation(Vector3.right, direction);
 				NWArrowCooldown = TickTimer.CreateFromSeconds(Runner, 2);
-				Runner.Spawn(_arrowPrefab,
-					inputAuthority: Object.InputAuthority,
-					position: position, rotation: rotation,
-					onBeforeSpawned: (runner, instanceObject) => {
-						var arrownb = instanceObject.GetComponent<ArrowNB>();
-						arrownb.Init(position, direction);
-					}
-				);
+				_arrows.Spawn(position: position, direction: direction);
 			}
 		}
 	}
