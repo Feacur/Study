@@ -56,8 +56,8 @@ public class EntryPoint : MonoBehaviour
 	private void NetworkToggle()
 	{
 		var ct = destroyCancellationToken;
-		Utils.RunSafeUniTask(NetworkToggleAsync()).Forget();
-		async UniTask NetworkToggleAsync()
+		NetworkToggleAsync().Forget();
+		async UniTaskVoid NetworkToggleAsync()
 		{
 			_networkButton.interactable = false;
 			_networkText.text = "...";
@@ -95,8 +95,8 @@ public class EntryPoint : MonoBehaviour
 		// @note see "network project config -> host migration update delay" for the granularity
 		// of synchronizations. it is expected to lose some progress on an uncontrolled migration
 		var ct = destroyCancellationToken;
-		Utils.RunSafeUniTask(NetworkMigrateAsync()).Forget();
-		async UniTask NetworkMigrateAsync()
+		NetworkMigrateAsync().Forget();
+		async UniTaskVoid NetworkMigrateAsync()
 		{
 			await prevRunner.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
 			await prevRunner.Shutdown(shutdownReason: ShutdownReason.HostMigration);
