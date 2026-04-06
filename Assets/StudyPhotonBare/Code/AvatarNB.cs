@@ -35,7 +35,7 @@ public class AvatarNB : NetworkBehaviour
 	private Vector3 _cameraSmoothDamp;
 	// private ChangeDetector _changeDetector;
 
-	public void Init()
+	public void SAInit()
 	{
 		NWHitpoints = HITPOINTS_MAX;
 	}
@@ -95,7 +95,7 @@ public class AvatarNB : NetworkBehaviour
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Translate2D(NWAim);
 				var position = avatarPosition + direction;
-				_arrows.Spawn(position: position, direction: direction);
+				_arrows.SASpawn(position: position, direction: direction);
 			}
 		}
 	}
@@ -163,7 +163,7 @@ public class AvatarNB : NetworkBehaviour
 		}
 	}
 
-	public void Hit()
+	public void SAHit()
 	{
 		var nextHitpoints = NWHitpoints - 1;
 		if (nextHitpoints <= 0)

@@ -43,7 +43,7 @@ public class AvatarManagerNB : NetworkBehaviour
 				_instances.Add(token, instanceObject);
 
 				var avatar = instanceObject.GetComponent<AvatarNB>();
-				avatar.Init();
+				avatar.SAInit();
 			}
 		);
 		Runner.PushHostMigrationSnapshot();
@@ -109,7 +109,7 @@ public class AvatarManagerNB : NetworkBehaviour
 					_instances[token] = instanceObject;
 
 					var avatar = instanceObject.GetComponent<AvatarNB>();
-					avatar.Init();
+					avatar.SAInit();
 
 					instanceObject.CopyStateFrom(prevObject);
 
