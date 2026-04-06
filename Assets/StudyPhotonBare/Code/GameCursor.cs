@@ -5,6 +5,7 @@ public class GameCursor : MonoBehaviour
 {
 	public static GameCursor Instance { get; private set; }
 
+	[Header("Visuals")]
 	[SerializeField] SpriteRenderer _visuals;
 
 	void Awake()

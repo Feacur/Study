@@ -5,6 +5,8 @@ public class GameCameraRig : MonoBehaviour
 	public static GameCameraRig Instance { get; private set; }
 
 	public Camera Camera => _camera;
+
+	[Header("Visuals")]
 	[SerializeField] Camera _camera;
 
 	void Awake()

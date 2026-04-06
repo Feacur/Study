@@ -16,12 +16,11 @@ public class EntryPoint : MonoBehaviour
 	[SerializeField] AvatarManagerNB _avatarManagerPrefab; // @note network behaviours are destroyed by default, but can be pooled
 	[SerializeField] NetworkRunner _networkRunnerPrefab; // @note network runner should not be reused
 
-	[Header("Visuals")]
+	[Header("Visuals (external)")]
 	[SerializeField] Button _networkButton;
 	[SerializeField] TMP_Text _networkText;
 
 	[Header("Private")]
-	private INetworkSceneManager _sceneManager;
 	private NetworkRunner _networkRunner;
 
 	void Awake()
@@ -30,9 +29,6 @@ public class EntryPoint : MonoBehaviour
 		_networkButton.onClick.AddListener(NetworkToggle);
 		_networkButton.gameObject.SetActive(true);
 		_networkText.text = "network";
-
-		_sceneManager = GetComponent<INetworkSceneManager>();
-		if (_sceneManager == null) _sceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>();
 
 		QualitySettings.vSyncCount = 0;
 		Application.targetFrameRate = 60;
@@ -72,10 +68,11 @@ public class EntryPoint : MonoBehaviour
 			{
 				var activeScene = SceneManager.GetActiveScene();
 				var instance = CreateRunner();
-				var manager = Instantiate(_avatarManagerPrefab);
+				var sceneManager = instance.GetComponent<INetworkSceneManager>();
+				_ = Instantiate(_avatarManagerPrefab);
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
-					SceneManager = _sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
+					SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
 					OnGameStarted = runner => { _networkRunner = runner; },
 				});
 
@@ -103,10 +100,11 @@ public class EntryPoint : MonoBehaviour
 
 			var activeScene = SceneManager.GetActiveScene();
 			var instance = CreateRunner();
+			var sceneManager = instance.GetComponent<INetworkSceneManager>();
 			var manager = Instantiate(_avatarManagerPrefab);
 			var result = await instance.StartGame(new StartGameArgs {
 				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
-				SceneManager = _sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
+				SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
 				OnGameStarted = runner => { _networkRunner = runner; },
 				HostMigrationResume = manager.NetworkResume,
 			});
@@ -133,6 +131,9 @@ public class EntryPoint : MonoBehaviour
 		
 		if (instance.gameObject.GetComponent<INetworkRunnerCallbacks>() == null)
 			instance.gameObject.AddComponent<NetworkEvents>();
+		
+		if (instance.gameObject.GetComponent<INetworkSceneManager>() == null)
+			instance.gameObject.AddComponent<NetworkSceneManagerDefault>();
 
 		return instance;
 	}

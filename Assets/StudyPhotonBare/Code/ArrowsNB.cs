@@ -15,7 +15,7 @@ public class ArrowsNB : NetworkBehaviour
 	[Header("Logics")]
 	[SerializeField] int _arrowLifeSeconds = 1;
 	[SerializeField] float _arrowSpeed = 20;
-	[SerializeField] ContactFilter2D contactFilter;
+	[SerializeField] ContactFilter2D _contactFilter;
 
 	[Header("Visuals")]
 	[SerializeField] GameObject _arrowPrefab;
@@ -69,7 +69,7 @@ public class ArrowsNB : NetworkBehaviour
 			var direction = positionNext - positionCurr;
 
 			var hitSomething = false;
-			var hitsCount = scene.Raycast(positionCurr, direction, direction.magnitude, contactFilter, _hits);
+			var hitsCount = scene.Raycast(positionCurr, direction, direction.magnitude, _contactFilter, _hits);
 			for (int hitIndex = 0; hitIndex < hitsCount; hitIndex++)
 			{
 				var hit = _hits[hitIndex];
