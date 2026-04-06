@@ -6,10 +6,14 @@ public class ArrowsNB : NetworkBehaviour
 {
 	private const int ARROWS_LIMIT = 4;
 
-	[SerializeField] GameObject _arrowPrefab;
+	[Header("Logics")]
 	[SerializeField] int _arrowLifeSeconds = 1;
 	[SerializeField] float _arrowSpeed = 20;
 
+	[Header("Visuals")]
+	[SerializeField] GameObject _arrowPrefab;
+
+	[Header("Networked")]
 	[Networked] int NWArrowsCooldown { get; set; }
 	[Networked, Capacity(ARROWS_LIMIT)] NetworkArray<Arrow> NWArrows { get; }
 	[Networked] int NWArrowsWrite { get; set; }
