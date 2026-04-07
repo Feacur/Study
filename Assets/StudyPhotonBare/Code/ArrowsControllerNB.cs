@@ -52,6 +52,12 @@ public class ArrowsControllerNB : NetworkBehaviour
 		}
 	}
 
+	void OnDestroy()
+	{
+		foreach (var it in _instances)
+			Destroy(it.GO);
+	}
+
 	public override void FixedUpdateNetwork()
 	{
 		// @todo compact alive set or have read-write pointers
