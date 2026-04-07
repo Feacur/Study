@@ -2,6 +2,10 @@ using Fusion;
 using TMPro;
 using UnityEngine;
 
+
+namespace StudyPhotonBare
+{
+
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkTransform))]
 public class AvatarNB : NetworkBehaviour
@@ -80,4 +84,6 @@ public class AvatarNB : NetworkBehaviour
 
 	private void NWHitpointsCR() => 
 		_hitpointsLabel.text = NWHitpoints.ToString();
+}
+
 }

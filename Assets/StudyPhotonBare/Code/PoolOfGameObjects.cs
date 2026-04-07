@@ -3,6 +3,10 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using ID = System.Int32; // should be the same type as `Object.GetInstanceID()`
 
+
+namespace StudyPhotonBare
+{
+
 public static class PoolOfGameObjects
 {
 	private static GameObject _root;
@@ -88,4 +92,6 @@ public static class PoolOfGameObjects
 
 		return queue;
 	}
+}
+
 }

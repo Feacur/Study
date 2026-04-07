@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 using Fusion;
 using UnityEngine;
 
+namespace StudyPhotonBare
+{
+
 public static class Utils
 {
 	public static Vector2 ScreenSize => new Vector2(Screen.width, Screen.height);
@@ -32,4 +35,6 @@ public static class Utils
 		=> runner.IsServer
 		|| runner.Topology == Topologies.Shared
 		&& runner.LocalPlayer == player;
+}
+
 }
