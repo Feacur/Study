@@ -100,6 +100,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4958895453189377623}
+  - component: {fileID: -703226070717016716}
   m_Layer: 0
   m_Name: Arrow
   m_TagString: Untagged
@@ -123,3 +124,15 @@ Transform:
   - {fileID: 4510826562754715962}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-703226070717016716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7740408432832549357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac10889c3925dcf44980c21263f0d140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: StudyPhotonBare::PooledGameObject

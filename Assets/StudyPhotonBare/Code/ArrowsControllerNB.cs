@@ -10,7 +10,6 @@ public class ArrowsControllerNB : NetworkBehaviour
 	// arrows array per player or give on of them complete
 	// authority over the projectile - and then it's a mix
 	// of complete p2p and host/client variant. shady
-	private const int ARROWS_LIMIT = 4;
 
 	[Header("Logics")]
 	[SerializeField] int _lifeSeconds = 1;
@@ -22,19 +21,26 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	[Header("Networked")]
 	[Networked] int NWArrowsCooldown { get; set; }
-	[Networked, Capacity(ARROWS_LIMIT)] NetworkArray<Arrow> NWArrows { get; }
+	[Networked, Capacity(4), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
 	[Networked] int NWArrowsWrite { get; set; }
 
 	[Header("Private")]
+	private readonly HashSet<int> _activeIDs = new HashSet<int>();
+	private readonly List<Instance> _instances = new List<Instance>();
 	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
-	private readonly Instance[] _instances = new Instance[ARROWS_LIMIT];
+
+	[Header("Accessors")]
+	private float Time => HasStateAuthority ? Runner.LocalRenderTime : Runner.RemoteRenderTime;
+	private float GetElapsed(in NSArrow arrow, float time) => time - arrow.InitTick * Runner.DeltaTime;
+	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
+	private int LifeTicks => _lifeSeconds * Runner.TickRate;
 
 	public void SASpawn(Vector3 position, Vector3 direction)
 	{
 		if (NWArrowsCooldown > Runner.Tick) return;
-		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + _lifeSeconds * Runner.TickRate / ARROWS_LIMIT);
+		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + LifeTicks / NWArrows.Length);
 
-		NWArrows.Set(NWArrowsWrite, new Arrow {
+		NWArrows.Set(NWArrowsWrite, new NSArrow {
 			InitTick = Runner.Tick,
 			InitPosition = position,
 			InitDirection = direction,
@@ -42,20 +48,16 @@ public class ArrowsControllerNB : NetworkBehaviour
 		NWArrowsWrite = (NWArrowsWrite + 1) % NWArrows.Length;
 	}
 
-	void Awake()
+	public override void Spawned()
 	{
-		// @todo instantiate on demand, pool
-		for (int i = 0; i < _instances.Length; i++)
-		{
-			var go = Instantiate(_prefab); go.SetActive(false);
-			_instances[i] = new Instance {GO = go};
-		}
+		PoolOfGameObjects.WarmupAdditive(_prefab, (byte)NWArrows.Length);
 	}
 
-	void OnDestroy()
+	public override void Despawned(NetworkRunner runner, bool hasState)
 	{
 		foreach (var it in _instances)
-			Destroy(it.GO);
+			PoolOfGameObjects.Ret(it.GO);
+		_instances.Clear();
 	}
 
 	public override void FixedUpdateNetwork()
@@ -84,50 +86,79 @@ public class ArrowsControllerNB : NetworkBehaviour
 					: null;
 				if (avatarNB && avatarNB.Object.InputAuthority != Object.InputAuthority)
 				{
-					avatarNB.SAHit();
+					avatarNB.SATakeDamage();
 					hitSomething = true;
 				}
 			}
 
-			if (hitSomething || elapsed > _lifeSeconds * Runner.TickRate)
+			if (hitSomething || elapsed > LifeTicks)
 				NWArrows.Set(i, default);
 		}
 	}
 
 	public override void Render()
 	{
-		for (int i = 0; i < _instances.Length; i++)
+		var time = Time;
+		for (int i = 0; i < _instances.Count; i++)
 		{
 			var inst = _instances[i];
-			var arrow = NWArrows[i];
-			if (arrow.IsAlive)
-			{
-				var time = HasStateAuthority
-					? Runner.LocalRenderTime
-					: Runner.RemoteRenderTime;
-				var elapsed = time - arrow.InitTick * Runner.DeltaTime;
-				GetPositionTime(in arrow, elapsed, out var position, out var rotation);
-
-				inst.GO.SetActive(elapsed >= 0); // @note: should be visible only with valid time
-				inst.GO.transform.SetPositionAndRotation(position, rotation);
-			}
-			else inst.GO.SetActive(false);
+			var arrow = NWArrows[inst.ID];
+			if (!arrow.IsAlive) continue; // @note ok, this can be avoided with a dedicated `IsAlive` field
+			var elapsed = GetElapsed(in arrow, time);
+			GetPositionTime(in arrow, elapsed, out var position, out var rotation);
+			inst.GO.transform.SetPositionAndRotation(position, rotation);
 		}
 	}
 
-	private void GetPositionTicks(in Arrow arrow, int elapsed, out Vector3 position, out Quaternion rotation)
+	private void GetPositionTicks(in NSArrow arrow, int elapsed, out Vector3 position, out Quaternion rotation)
 	{
 		var time = elapsed * Runner.DeltaTime;
 		GetPositionTime(arrow, time, out position, out rotation);
 	}
 
-	private void GetPositionTime(in Arrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
+	private void GetPositionTime(in NSArrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
 	{
 		position = arrow.InitPosition + (Vector3)arrow.InitDirection * (_speed * elapsed);
 		rotation = Quaternion.FromToRotation(Vector3.right, arrow.InitDirection);
 	}
 
-	private struct Arrow : INetworkStruct
+	private void NWArrowsCR()
+	{
+		var time = Time;
+
+		for (int i = _instances.Count - 1; i >= 0; i--)
+		{
+			var inst = _instances[i];
+			if (_activeIDs.Contains(inst.ID))
+			{
+				var arrow = NWArrows[inst.ID];
+				if (!IsVisible(in arrow, time))
+				{
+					PoolOfGameObjects.Ret(inst.GO);
+					_activeIDs.Remove(inst.ID);
+					_instances.RemoveAt(i);
+				}
+			}
+		}
+
+		for (int id = 0; id < NWArrows.Length; id++)
+		{
+			if (!_activeIDs.Contains(id))
+			{
+				var arrow = NWArrows[id];
+				if (IsVisible(in arrow, time))
+				{
+					_activeIDs.Add(id);
+					_instances.Add(new Instance {
+						ID = id,
+						GO = PoolOfGameObjects.Get(_prefab),
+					});
+				}
+			}
+		}
+	}
+
+	private struct NSArrow : INetworkStruct
 	{
 		public int InitTick;
 		public Vector3Compressed InitPosition;
@@ -138,6 +169,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	private struct Instance
 	{
+		public int ID;
 		public GameObject GO;
 	}
 }
