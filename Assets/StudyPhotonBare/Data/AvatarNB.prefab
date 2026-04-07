@@ -716,6 +716,8 @@ GameObject:
   - component: {fileID: 5299366004340950498}
   - component: {fileID: 8118621868758754173}
   - component: {fileID: -913699937644366611}
+  - component: {fileID: -4536473946539817215}
+  - component: {fileID: 5422142981598480520}
   - component: {fileID: 2475818999684433633}
   - component: {fileID: -3902008561165140810}
   m_Layer: 0
@@ -765,6 +767,8 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 8118621868758754173}
   - {fileID: -913699937644366611}
+  - {fileID: -4536473946539817215}
+  - {fileID: 5422142981598480520}
   - {fileID: 2475818999684433633}
   - {fileID: -3902008561165140810}
   ForceRemoteRenderTimeframe: 0
@@ -797,7 +801,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c424e3348d4103746bdbc70fc3c17c70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: StudyPhotonBare::Avatar
+  _lifetimeNB: {fileID: -4536473946539817215}
+  _hitpointsNB: {fileID: 5422142981598480520}
+--- !u!114 &-4536473946539817215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7740408432832549357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20897928051a66b4ca4e16bcef0ccfa6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: StudyPhotonBare::StudyPhotonBare.ComponentLifetimeNB
   _lifetimeLabel: {fileID: 6166162976407558309}
+--- !u!114 &5422142981598480520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7740408432832549357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f61422851103c0478e08475fd7ce9e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: StudyPhotonBare::StudyPhotonBare.ComponentHitpointsNB
   _hitpointsLabel: {fileID: 4616150772117796986}
 --- !u!114 &2475818999684433633
 MonoBehaviour:

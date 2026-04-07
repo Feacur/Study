@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Tools
 {
 
 public class GameCursor : MonoBehaviour

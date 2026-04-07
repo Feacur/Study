@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using Fusion;
+using StudyPhotonBare.Tools;
 using UnityEngine;
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Game
 {
 
 [RequireComponent(typeof(NetworkObject))]
@@ -47,7 +48,7 @@ public class AvatarsManagerNB : NetworkBehaviour
 				_instances.Add(token, instanceObject);
 
 				var avatarNB = instanceObject.GetComponent<AvatarNB>();
-				avatarNB.SAInit();
+				avatarNB.SAReset();
 			}
 		);
 		Runner.PushHostMigrationSnapshot();
@@ -113,7 +114,7 @@ public class AvatarsManagerNB : NetworkBehaviour
 					_instances[token] = instanceObject;
 
 					var avatarNB = instanceObject.GetComponent<AvatarNB>();
-					avatarNB.SAInit();
+					avatarNB.SAReset();
 
 					instanceObject.CopyStateFrom(prevObject);
 

@@ -1,7 +1,8 @@
+using StudyPhotonBare.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Pooling
 {
 
 public class PooledGameObject : MonoBehaviour

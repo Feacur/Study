@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using Fusion;
+using StudyPhotonBare.Components;
+using StudyPhotonBare.Pooling;
 using UnityEngine;
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Game
 {
 
 [RequireComponent(typeof(NetworkObject))]
@@ -85,12 +87,12 @@ public class ArrowsControllerNB : NetworkBehaviour
 			for (int hitIndex = 0; hitIndex < hitsCount; hitIndex++)
 			{
 				var hit = _hits[hitIndex];
-				var avatarNB = hit.collider
-					? hit.collider.GetComponentInParent<AvatarNB>()
+				var hitpointsNB = hit.collider
+					? hit.collider.GetComponentInParent<ComponentHitpointsNB>()
 					: null;
-				if (avatarNB && avatarNB.Object.InputAuthority != Object.InputAuthority)
+				if (hitpointsNB && hitpointsNB.Object.InputAuthority != Object.InputAuthority)
 				{
-					avatarNB.SATakeDamage();
+					hitpointsNB.SATakeDamage();
 					hitSomething = true;
 				}
 			}
