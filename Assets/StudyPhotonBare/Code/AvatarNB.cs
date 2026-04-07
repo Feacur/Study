@@ -34,7 +34,7 @@ public class AvatarNB : NetworkBehaviour
 		));
 	}
 
-	public void SAHit()
+	public void SATakeDamage()
 	{
 		if (NWHitpoints > HITPOINTS_DMG)
 			NWHitpoints -= HITPOINTS_DMG;
