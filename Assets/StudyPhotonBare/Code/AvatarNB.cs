@@ -7,6 +7,7 @@ using UnityEngine;
 public class AvatarNB : NetworkBehaviour
 {
 	private const int HITPOINTS_MAX = 3;
+	private const int HITPOINTS_DMG = 1;
 
 	[Header("Visuals")]
 	[SerializeField] TMP_Text _lifetimeLabel;
@@ -21,19 +22,23 @@ public class AvatarNB : NetworkBehaviour
 
 	public void SAInit()
 	{
+		SARespawn();
+	}
+
+	public void SARespawn()
+	{
+		NWLifetime = 0;
 		NWHitpoints = HITPOINTS_MAX;
+		_networkTransform.Teleport(Utils.Translate2D(
+			Random.insideUnitCircle * 2
+		));
 	}
 
 	public void SAHit()
 	{
-		var nextHitpoints = NWHitpoints - 1;
-		if (nextHitpoints <= 0)
-		{ // @todo respawn
-			nextHitpoints = HITPOINTS_MAX;
-			NWLifetime = 0;
-			_networkTransform.Teleport(Vector3.zero);
-		}
-		NWHitpoints = nextHitpoints;
+		if (NWHitpoints > HITPOINTS_DMG)
+			NWHitpoints -= HITPOINTS_DMG;
+		else SARespawn();
 	}
 
 	void Awake()

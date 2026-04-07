@@ -62,13 +62,13 @@ public class AvatarControllerNB : NetworkBehaviour
 
 			{
 				var deltaMove = input.move * (_speed * Runner.DeltaTime);
-				transform.position += Translate2D(deltaMove);
+				transform.position += Utils.Translate2D(deltaMove);
 			}
 
 			if (input.buttons.IsSet(InputData.ACTION_ATTACK))
 			{ // player would expect to shoot at where they've aimed; either before or after transform changes
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
-				var direction = Translate2D(NWAim);
+				var direction = Utils.Translate2D(NWAim);
 				var position = avatarPosition + direction;
 				_arrowsControllerNB.SASpawn(position: position, direction: direction);
 			}
@@ -78,7 +78,7 @@ public class AvatarControllerNB : NetworkBehaviour
 	public override void Render()
 	{
 		{
-			var target = Translate2D(NWAim * 0.5f);
+			var target = Utils.Translate2D(NWAim * 0.5f);
 			var distance = _crAimSpeed * Time.unscaledDeltaTime;
 			_aimTransform.localPosition = Vector3.MoveTowards(_aimTransform.localPosition, target, distance);
 		}
@@ -86,7 +86,7 @@ public class AvatarControllerNB : NetworkBehaviour
 		if (AreControlsEnabled)
 		{
 			var centerOffset = Cursor.GetCenterOffsetRelative();
-			var targetPosition = transform.position + Translate2D(centerOffset * _cameraOffset);
+			var targetPosition = transform.position + Utils.Translate2D(centerOffset * _cameraOffset);
 			CameraRig.transform.position = Vector3.SmoothDamp(CameraRig.transform.position, targetPosition, ref _cameraSmoothDamp, Time.unscaledDeltaTime);
 		}
 	}
@@ -127,9 +127,6 @@ public class AvatarControllerNB : NetworkBehaviour
 			}
 		}
 	}
-
-	private Vector3 Translate2D(Vector2 input) =>
-		new Vector3(input.x, input.y, 0);
 
 	private void InputConsume(NetworkRunner runner, NetworkInput input)
 	{
