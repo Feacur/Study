@@ -1,5 +1,9 @@
 using UnityEngine;
 
+
+namespace StudyPhotonBare
+{
+
 public class GameCameraRig : MonoBehaviour
 {
 	public static GameCameraRig Instance { get; private set; }
@@ -19,4 +23,6 @@ public class GameCameraRig : MonoBehaviour
 		if (Instance == this)
 			Instance = null;
 	}
+}
+
 }

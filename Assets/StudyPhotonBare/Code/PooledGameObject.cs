@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.Assertions;
 
+namespace StudyPhotonBare
+{
+
 public class PooledGameObject : MonoBehaviour
 {
 	// @note fetch the root object, should be one step away only
@@ -18,4 +21,6 @@ public class PooledGameObject : MonoBehaviour
 		pooled._prefab = this;
 		return ret;
 	}
+}
+
 }

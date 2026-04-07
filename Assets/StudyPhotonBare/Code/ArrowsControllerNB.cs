@@ -2,6 +2,10 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
+
+namespace StudyPhotonBare
+{
+
 [RequireComponent(typeof(NetworkObject))]
 public class ArrowsControllerNB : NetworkBehaviour
 {
@@ -172,4 +176,6 @@ public class ArrowsControllerNB : NetworkBehaviour
 		public int ID;
 		public GameObject GO;
 	}
+}
+
 }

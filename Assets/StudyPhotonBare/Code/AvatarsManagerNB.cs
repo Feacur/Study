@@ -2,6 +2,10 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
+
+namespace StudyPhotonBare
+{
+
 [RequireComponent(typeof(NetworkObject))]
 public class AvatarsManagerNB : NetworkBehaviour
 	, IPlayerJoined
@@ -123,4 +127,6 @@ public class AvatarsManagerNB : NetworkBehaviour
 			);
 		}
 	}
+}
+
 }

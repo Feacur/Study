@@ -7,6 +7,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+
+namespace StudyPhotonBare
+{
+
 public class EntryPoint : MonoBehaviour
 {
 	public static EntryPoint Instance { get; private set; }
@@ -148,4 +152,6 @@ public class EntryPoint : MonoBehaviour
 		var events = _networkRunner.GetComponent<NetworkEvents>();
 		events.OnHostMigration.AddListener(NetworkMigrate);
 	}
+}
+
 }

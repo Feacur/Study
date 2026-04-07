@@ -2,6 +2,10 @@ using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+
+namespace StudyPhotonBare
+{
+
 [RequireComponent(typeof(NetworkObject))]
 public class AvatarControllerNB : NetworkBehaviour
 	, IBeforeUpdate
@@ -148,4 +152,6 @@ public class AvatarControllerNB : NetworkBehaviour
 			aim.Normalize();
 		}
 	}
+}
+
 }

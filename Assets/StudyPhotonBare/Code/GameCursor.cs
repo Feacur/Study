@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+
+namespace StudyPhotonBare
+{
+
 public class GameCursor : MonoBehaviour
 {
 	public static GameCursor Instance { get; private set; }
@@ -68,4 +72,6 @@ public class GameCursor : MonoBehaviour
 		Cursor.visible = !state;
 		_visuals.enabled = state;
 	}
+}
+
 }
