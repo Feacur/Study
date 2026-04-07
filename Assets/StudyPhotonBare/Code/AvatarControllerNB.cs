@@ -1,9 +1,10 @@
 using Fusion;
+using StudyPhotonBare.Tools;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Game
 {
 
 [RequireComponent(typeof(NetworkObject))]

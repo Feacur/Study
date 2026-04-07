@@ -1,6 +1,7 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Fusion;
+using StudyPhotonBare.Tools;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,7 +9,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Game
 {
 
 public class EntryPoint : MonoBehaviour

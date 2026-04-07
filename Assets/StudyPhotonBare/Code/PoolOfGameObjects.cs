@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 using ID = System.Int32; // should be the same type as `Object.GetInstanceID()`
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Pooling
 {
 
 public static class PoolOfGameObjects

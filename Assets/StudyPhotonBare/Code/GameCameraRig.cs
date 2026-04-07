@@ -1,7 +1,7 @@
 using UnityEngine;
 
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Tools
 {
 
 public class GameCameraRig : MonoBehaviour

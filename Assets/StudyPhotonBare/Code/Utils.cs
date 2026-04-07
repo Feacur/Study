@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Fusion;
 using UnityEngine;
 
-namespace StudyPhotonBare
+namespace StudyPhotonBare.Tools
 {
 
 public static class Utils
