@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d7e513440a3f794282107865496c679, type: 3}
   m_Name: 
   m_EditorClassIdentifier: StudyPhotonBare::EntryPoint
-  _avatarManagerPrefab: {fileID: -3948096121077220289, guid: 67727c9c42e574d46b18b0a31c36e742, type: 3}
+  _avatarManagerNBPrefab: {fileID: -3948096121077220289, guid: 67727c9c42e574d46b18b0a31c36e742, type: 3}
   _networkRunnerPrefab: {fileID: 6188687152775723902, guid: 4e9f65830859dd14aa9f3d6cda9c5271, type: 3}
   _networkButton: {fileID: 0}
   _networkText: {fileID: 0}

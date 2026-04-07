@@ -8,6 +8,9 @@ public class GameCursor : MonoBehaviour
 	[Header("Visuals")]
 	[SerializeField] SpriteRenderer _visuals;
 
+	[Header("Accessors")]
+	private GameCameraRig CameraRig => GameCameraRig.Instance;
+
 	void Awake()
 	{
 		Instance = this;
@@ -24,10 +27,9 @@ public class GameCursor : MonoBehaviour
 	void Update()
 	{
 		var mouse = Mouse.current;
-		var camera = GameCameraRig.Instance.Camera;
 
-		var screenPosition = mouse.position.ReadValue(); var z = -camera.transform.position.z;
-		var worldPosition = camera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, z));
+		var screenPosition = mouse.position.ReadValue(); var z = -CameraRig.Camera.transform.position.z;
+		var worldPosition = CameraRig.Camera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, z));
 		transform.position = new Vector3(worldPosition.x, worldPosition.y);
 
 		var leftButtonPressed = mouse.leftButton.IsPressed();

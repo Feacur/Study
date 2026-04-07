@@ -3,11 +3,11 @@ using Fusion;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkObject))]
-public class AvatarManagerNB : NetworkBehaviour
+public class AvatarsManagerNB : NetworkBehaviour
 	, IPlayerJoined
 	, IPlayerLeft
 {
-	public static AvatarManagerNB Instance { get; private set; }
+	public static AvatarsManagerNB Instance { get; private set; }
 
 	[Header("Systems")]
 	[SerializeField] AvatarNB _avatarPrefab;
@@ -42,8 +42,8 @@ public class AvatarManagerNB : NetworkBehaviour
 				Runner.SetPlayerObject(player, instanceObject);
 				_instances.Add(token, instanceObject);
 
-				var avatar = instanceObject.GetComponent<AvatarNB>();
-				avatar.SAInit();
+				var avatarNB = instanceObject.GetComponent<AvatarNB>();
+				avatarNB.SAInit();
 			}
 		);
 		Runner.PushHostMigrationSnapshot();
@@ -108,8 +108,8 @@ public class AvatarManagerNB : NetworkBehaviour
 					runner.SetPlayerObject(prevObject.InputAuthority, instanceObject);
 					_instances[token] = instanceObject;
 
-					var avatar = instanceObject.GetComponent<AvatarNB>();
-					avatar.SAInit();
+					var avatarNB = instanceObject.GetComponent<AvatarNB>();
+					avatarNB.SAInit();
 
 					instanceObject.CopyStateFrom(prevObject);
 

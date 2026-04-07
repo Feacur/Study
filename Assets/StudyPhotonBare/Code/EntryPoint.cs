@@ -13,7 +13,7 @@ public class EntryPoint : MonoBehaviour
 	public static readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
 
 	[Header("Systems")]
-	[SerializeField] AvatarManagerNB _avatarManagerPrefab; // @note network behaviours are destroyed by default, but can be pooled
+	[SerializeField] AvatarsManagerNB _avatarManagerNBPrefab; // @note network behaviours are destroyed by default, but can be pooled
 	[SerializeField] NetworkRunner _networkRunnerPrefab; // @note network runner should not be reused
 
 	[Header("Visuals (external)")]
@@ -22,6 +22,9 @@ public class EntryPoint : MonoBehaviour
 
 	[Header("Private")]
 	private NetworkRunner _networkRunner;
+
+	[Header("Accessors")]
+	private GameCursor Cursor => GameCursor.Instance;
 
 	void Awake()
 	{
@@ -69,7 +72,7 @@ public class EntryPoint : MonoBehaviour
 				var activeScene = SceneManager.GetActiveScene();
 				var instance = CreateRunner();
 				var sceneManager = instance.GetComponent<INetworkSceneManager>();
-				_ = Instantiate(_avatarManagerPrefab);
+				_ = Instantiate(_avatarManagerNBPrefab);
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
 					SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
@@ -101,7 +104,7 @@ public class EntryPoint : MonoBehaviour
 			var activeScene = SceneManager.GetActiveScene();
 			var instance = CreateRunner();
 			var sceneManager = instance.GetComponent<INetworkSceneManager>();
-			var manager = Instantiate(_avatarManagerPrefab);
+			var manager = Instantiate(_avatarManagerNBPrefab);
 			var result = await instance.StartGame(new StartGameArgs {
 				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
 				SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
@@ -121,7 +124,7 @@ public class EntryPoint : MonoBehaviour
 	private void SetMenuVisible(bool state)
 	{
 		_networkButton.gameObject.SetActive(state);
-		GameCursor.Instance.SetConfined(!state);
+		Cursor.SetConfined(!state);
 	}
 
 	private NetworkRunner CreateRunner()
