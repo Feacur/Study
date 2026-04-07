@@ -3,7 +3,7 @@ using Fusion;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkObject))]
-public class ArrowsNB : NetworkBehaviour
+public class ArrowsControllerNB : NetworkBehaviour
 {
 	// @note technically this can be a shared managing object,
 	// but then in shared topology we either need to chunk the
@@ -13,12 +13,12 @@ public class ArrowsNB : NetworkBehaviour
 	private const int ARROWS_LIMIT = 4;
 
 	[Header("Logics")]
-	[SerializeField] int _arrowLifeSeconds = 1;
-	[SerializeField] float _arrowSpeed = 20;
+	[SerializeField] int _lifeSeconds = 1;
+	[SerializeField] float _speed = 20;
 	[SerializeField] ContactFilter2D _contactFilter;
 
 	[Header("Visuals")]
-	[SerializeField] GameObject _arrowPrefab;
+	[SerializeField] GameObject _prefab;
 
 	[Header("Networked")]
 	[Networked] int NWArrowsCooldown { get; set; }
@@ -32,7 +32,7 @@ public class ArrowsNB : NetworkBehaviour
 	public void SASpawn(Vector3 position, Vector3 direction)
 	{
 		if (NWArrowsCooldown > Runner.Tick) return;
-		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + _arrowLifeSeconds * Runner.TickRate / ARROWS_LIMIT);
+		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + _lifeSeconds * Runner.TickRate / ARROWS_LIMIT);
 
 		NWArrows.Set(NWArrowsWrite, new Arrow {
 			InitTick = Runner.Tick,
@@ -47,7 +47,7 @@ public class ArrowsNB : NetworkBehaviour
 		// @todo instantiate on demand, pool
 		for (int i = 0; i < _instances.Length; i++)
 		{
-			var go = Instantiate(_arrowPrefab); go.SetActive(false);
+			var go = Instantiate(_prefab); go.SetActive(false);
 			_instances[i] = new Instance {GO = go};
 		}
 	}
@@ -73,17 +73,17 @@ public class ArrowsNB : NetworkBehaviour
 			for (int hitIndex = 0; hitIndex < hitsCount; hitIndex++)
 			{
 				var hit = _hits[hitIndex];
-				var avatar = hit.collider
+				var avatarNB = hit.collider
 					? hit.collider.GetComponentInParent<AvatarNB>()
 					: null;
-				if (avatar && avatar.Object.InputAuthority != Object.InputAuthority)
+				if (avatarNB && avatarNB.Object.InputAuthority != Object.InputAuthority)
 				{
-					avatar.SAHit();
+					avatarNB.SAHit();
 					hitSomething = true;
 				}
 			}
 
-			if (hitSomething || elapsed > _arrowLifeSeconds * Runner.TickRate)
+			if (hitSomething || elapsed > _lifeSeconds * Runner.TickRate)
 				NWArrows.Set(i, default);
 		}
 	}
@@ -117,7 +117,7 @@ public class ArrowsNB : NetworkBehaviour
 
 	private void GetPositionTime(in Arrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
 	{
-		position = arrow.InitPosition + (Vector3)arrow.InitDirection * (_arrowSpeed * elapsed);
+		position = arrow.InitPosition + (Vector3)arrow.InitDirection * (_speed * elapsed);
 		rotation = Quaternion.FromToRotation(Vector3.right, arrow.InitDirection);
 	}
 
