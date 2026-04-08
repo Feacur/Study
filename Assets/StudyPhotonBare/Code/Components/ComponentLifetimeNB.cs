@@ -20,8 +20,8 @@ public class ComponentLifetimeNB : NetworkBehaviour
 	[Header("Accessors")]
 	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
 
-	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
-	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
+	void OnEnable() => EventBus.Subscribe(this, tag: NetworkObject);
+	void OnDisable() => EventBus.Unsubscribe(this, tag: NetworkObject);
 
 	public override void Spawned()
 	{
