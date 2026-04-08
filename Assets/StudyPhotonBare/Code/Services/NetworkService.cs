@@ -44,6 +44,7 @@ public class NetworkService : IService
 				var instance = CreateRunner();
 				var sceneManager = instance.GetComponent<INetworkSceneManager>();
 				_ = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
+				EventBus.Raise<INetworkListenerEvents>(it => it.OnLocalToken(Token));
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
 					SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),

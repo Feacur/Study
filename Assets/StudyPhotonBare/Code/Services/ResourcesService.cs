@@ -1,4 +1,3 @@
-using System;
 using Fusion;
 using StudyPhotonBare.Game;
 using StudyPhotonBare.Interfaces;
