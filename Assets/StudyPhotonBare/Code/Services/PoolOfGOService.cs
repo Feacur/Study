@@ -36,13 +36,13 @@ public sealed class PoolOfGOService : IService
 		Object.Destroy(_root);
 	}
 
-	public void WarmupAdditive(GameObject prefab, byte count)
+	public void Warmup(GameObject prefab, int count)
 	{
 		var pooled = prefab.GetComponent<PooledGameObject>();
 		if (pooled)
 		{
 			var queue = GetQueue(pooled);
-			for (byte i = 0; i < count; i++)
+			while (queue.Count < count)
 			{
 				var instance = pooled.Instantiate(parameters: new InstantiateParameters {
 					parent = _root.transform,
