@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using StudyPhotonBare.Game;
 using StudyPhotonBare.Interfaces;
@@ -16,8 +17,15 @@ public class ResourcesService : IService
 
 	public ResourcesService()
 	{
-		AvatarManagerNBPrefab = Resources.Load<AvatarsManagerNB>($"{Path}/{nameof(AvatarsManagerNB)}");
-		NetworkRunnerPrefab = Resources.Load<NetworkRunner>($"{Path}/{nameof(NetworkRunner)}");
+		AvatarManagerNBPrefab = Load<AvatarsManagerNB>();
+		NetworkRunnerPrefab = Load<NetworkRunner>();
+	}
+
+	private static T Load<T>() where T : UnityEngine.Object
+	{
+		var path = $"{Path}/{typeof(T).Name}";
+		var ret = Resources.Load<T>(path);
+		return ret;
 	}
 }
 

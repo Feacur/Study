@@ -84,6 +84,8 @@ public class NetworkService : IService
 				await instance.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
 				await NetworkFinalize(ct);
 			}
+
+			if (!Status) EventBus.Raise<INetworkListenerEvents>(it => it.OnStatusChanged(Status));
 		}
 	}
 

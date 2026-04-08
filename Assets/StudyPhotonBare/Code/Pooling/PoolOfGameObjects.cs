@@ -21,8 +21,8 @@ public static class PoolOfGameObjects
 
 	public static void Reset()
 	{
-		foreach (var it in _instances)
-			it.Value.Clear();
+		foreach (var (_, instance) in _instances)
+			instance.Clear();
 		_instances.Clear();
 	}
 

@@ -11,8 +11,8 @@ public static class EventBus
 
 	public static void Reset()
 	{
-		foreach (var it in _subscribers)
-			it.Value.Clear();
+		foreach (var (_, instance) in _subscribers)
+			instance.Clear();
 		_subscribers.Clear();
 	}
 
