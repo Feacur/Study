@@ -1,7 +1,7 @@
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface INetworkToggler : IEventBusSubscriber
+public interface IEBSNetworkToggler : IEventBusSubscriber
 {
 	void ToggleNetwork();
 }

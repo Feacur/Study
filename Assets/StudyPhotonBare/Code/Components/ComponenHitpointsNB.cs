@@ -10,8 +10,8 @@ namespace StudyPhotonBare.Components
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkTransform))]
 public class ComponentHitpointsNB : NetworkBehaviour
-	, IResetable
-	, IDamageable
+	, IEBSResetable
+	, IEBSDamageable
 {
 	private const int HITPOINTS_MAX = 3;
 	private const int HITPOINTS_DMG = 1;
@@ -32,16 +32,16 @@ public class ComponentHitpointsNB : NetworkBehaviour
 		NWHitpointsCR();
 	}
 
-	void IResetable.Reset()
+	void IEBSResetable.Reset()
 	{
 		NWHitpoints = HITPOINTS_MAX;
 	}
 
-	void IDamageable.TakeDamage()
+	void IEBSDamageable.TakeDamage()
 	{
 		NWHitpoints -= HITPOINTS_DMG;
 		if (NWHitpoints <= 0)
-			EventBus.Raise<IRespawnable>(it => { it.Respawn(); }, tag: Object);
+			EventBus.Raise<IEBSRespawnable>(it => { it.Respawn(); }, tag: Object);
 	}
 
 	private void NWHitpointsCR() => 

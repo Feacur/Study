@@ -1,7 +1,7 @@
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface IRespawnable : IEventBusSubscriber
+public interface IEBSRespawnable : IEventBusSubscriber
 {
 	void Respawn();
 }

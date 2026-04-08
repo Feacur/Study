@@ -27,7 +27,7 @@ public static class EntryPoint
 		// - ... meaning all the services are registered at the very start, as it is meant to
 		// - ... or services should ignore concecutive messages
 		// - ... or partially unsubscribe themselves from the bus
-		EventBus.Raise<IService>(it => it.Initialize());
+		EventBus.Raise<IEBSInitializeable>(it => it.Initialize());
 
 	#if UNITY_EDITOR // cleanup everything for
 		UnityEditor.EditorApplication.playModeStateChanged += PlayModeStateChanged;

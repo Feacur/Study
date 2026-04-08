@@ -9,7 +9,7 @@ namespace StudyPhotonBare.Components
 
 [RequireComponent(typeof(NetworkObject))]
 public class ComponentLifetimeNB : NetworkBehaviour
-	, IResetable
+	, IEBSResetable
 {
 	[Header("Visuals")]
 	[SerializeField] TMP_Text _lifetimeLabel;
@@ -34,7 +34,7 @@ public class ComponentLifetimeNB : NetworkBehaviour
 			NWLifetime += 1;
 	}
 
-	void IResetable.Reset()
+	void IEBSResetable.Reset()
 	{
 		NWLifetime = 0;
 	}

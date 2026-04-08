@@ -12,7 +12,7 @@ namespace StudyPhotonBare.Game
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkTransform))]
 public class AvatarControllerNB : NetworkBehaviour
-	, IRespawnable
+	, IEBSRespawnable
 	, IBeforeUpdate
 {
 	[Header("Logics")]
@@ -87,7 +87,7 @@ public class AvatarControllerNB : NetworkBehaviour
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Utils.Translate2D(NWAim);
 				var position = avatarPosition + direction;
-				EventBus.Raise<IShooter>(it => { it.Shoot(position: position, direction: direction); }, tag: Object);
+				EventBus.Raise<IEBSShooter>(it => { it.Shoot(position: position, direction: direction); }, tag: Object);
 			}
 		}
 	}
@@ -108,9 +108,9 @@ public class AvatarControllerNB : NetworkBehaviour
 		}
 	}
 
-	void IRespawnable.Respawn()
+	void IEBSRespawnable.Respawn()
 	{
-		EventBus.Raise<IResetable>(it => { it.Reset(); }, tag: Object);
+		EventBus.Raise<IEBSResetable>(it => { it.Reset(); }, tag: Object);
 		_networkTransform.Teleport(Utils.Translate2D(
 			Random.insideUnitCircle * 2
 		));

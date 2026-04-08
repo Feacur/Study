@@ -1,7 +1,7 @@
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface IResetable : IEventBusSubscriber
+public interface IEBSResetable : IEventBusSubscriber
 {
 	void Reset();
 }

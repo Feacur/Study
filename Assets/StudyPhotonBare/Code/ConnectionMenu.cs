@@ -11,7 +11,7 @@ namespace StudyPhotonBare.Root
 {
 
 public class ConnectionMenu : MonoBehaviour
-	, INetworkStatusListener
+	, IEBSNetworkStatusListener
 {
 	public static ConnectionMenu Instance { get; private set; }
 
@@ -51,7 +51,7 @@ public class ConnectionMenu : MonoBehaviour
 		}
 	}
 
-	void INetworkStatusListener.OnNetworkStatus(NetworkStatus status)
+	void IEBSNetworkStatusListener.OnNetworkStatus(NetworkStatus status)
 	{
 		_networkStatus = status;
 		switch (status)
@@ -78,7 +78,7 @@ public class ConnectionMenu : MonoBehaviour
 		}
 	}
 
-	private void ToggleNetwork() => EventBus.Raise<INetworkToggler>(it => it.ToggleNetwork());
+	private void ToggleNetwork() => EventBus.Raise<IEBSNetworkToggler>(it => it.ToggleNetwork());
 
 	private void SetMenuVisible(bool state)
 	{

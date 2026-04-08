@@ -12,7 +12,7 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class ArrowsControllerNB : NetworkBehaviour
-	, IShooter
+	, IEBSShooter
 {
 	// @note technically this can be a shared managing object,
 	// but then in shared topology we either need to chunk the
@@ -53,7 +53,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 	void OnEnable() => EventBus.Subscribe(this, tag: NetworkObject);
 	void OnDisable() => EventBus.Unsubscribe(this, tag: NetworkObject);
 
-	void IShooter.Shoot(Vector3 position, Vector3 direction)
+	void IEBSShooter.Shoot(Vector3 position, Vector3 direction)
 	{
 		if (NWArrowsCooldown > Runner.Tick) return;
 		NWArrowsCooldown = Runner.Tick + Mathf.Max(1, LifeTicks / NWArrows.Length);
@@ -109,7 +109,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 					: null;
 				if (entity && entity != damageSource)
 				{
-					EventBus.Raise<IDamageable>(it => { it.TakeDamage(); }, tag: entity);
+					EventBus.Raise<IEBSDamageable>(it => { it.TakeDamage(); }, tag: entity);
 					hitSomething = true;
 				}
 			}
