@@ -41,7 +41,11 @@ public class ArrowsControllerNB : NetworkBehaviour
 	[Header("Accessors")]
 	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
 	private PoolOfGOService PoolOfGO => ServiceLocator.Get<PoolOfGOService>(); // @todo cache on spawn ?
-	private float Time => HasStateAuthority ? Runner.LocalRenderTime : Runner.RemoteRenderTime;
+	// @note an official video tutorial used `HasStateAuthority`, but it's illogical in hindsight;
+	// another one, in text, suggests using `Object.IsProxy` for remote render time.
+	// `HasInputAuthority` might be a good fit too, as per my experiments;
+	// besides, "proxy" loosely means "~input & ~state"
+	private float Time => Object.IsProxy ? Runner.RemoteRenderTime : Runner.LocalRenderTime;
 	private float GetElapsed(in NSArrow arrow, float time) => time - arrow.InitTick * Runner.DeltaTime;
 	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
 	private int LifeTicks => _lifeSeconds * Runner.TickRate;
