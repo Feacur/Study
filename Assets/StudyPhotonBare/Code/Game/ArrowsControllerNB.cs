@@ -68,7 +68,8 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	public override void Spawned()
 	{
-		PoolOfGO.WarmupAdditive(_prefab, (byte)NWArrows.Length);
+		var count = NWArrows.Length * Runner.SessionInfo.PlayerCount;
+		PoolOfGO.Warmup(_prefab, count);
 	}
 
 	public override void Despawned(NetworkRunner runner, bool hasState)
