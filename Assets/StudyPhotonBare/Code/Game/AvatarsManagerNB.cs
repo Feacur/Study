@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
+using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
 using UnityEngine;
 
@@ -19,6 +20,9 @@ public class AvatarsManagerNB : NetworkBehaviour
 
 	[Header("Private")]
 	private readonly Dictionary<int, NetworkObject> _instances = new Dictionary<int, NetworkObject>();
+
+	[Header("Accessors")]
+	private NetworkService NetworkService => ServiceLocator.Get<NetworkService>();
 
 	void Awake()
 	{
@@ -76,7 +80,7 @@ public class AvatarsManagerNB : NetworkBehaviour
 	private int GetToken(NetworkRunner runner, PlayerRef player)
 	{
 		if (runner.LocalPlayer == player)
-			return EntryPoint.Token.GetHashCode();
+			return NetworkService.Token.GetHashCode();
 
 		if (HasStateAuthority)
 		{

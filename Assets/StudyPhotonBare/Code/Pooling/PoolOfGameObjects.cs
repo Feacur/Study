@@ -12,7 +12,7 @@ public static class PoolOfGameObjects
 	private static GameObject _root;
 	private static readonly Dictionary<ID, Queue<PooledGameObject>> _instances = new Dictionary<ID, Queue<PooledGameObject>>();
 
-	[RuntimeInitializeOnLoadMethod]
+	[RuntimeInitializeOnLoadMethod] // should it be handled by the `EntryPoint` ?
 	private static void RuntimeInitializeOnLoad()
 	{
 		_root = new GameObject($"{nameof(PoolOfGameObjects)} root");
