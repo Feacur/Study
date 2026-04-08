@@ -59,6 +59,8 @@ public class ConnectionMenu : MonoBehaviour
 	}
 
 	void INetworkListener.OnLocalToken(byte[] token) { /*dummy*/ }
+	void INetworkListener.OnResume() { /*dummy*/ }
+
 
 	private void NetworkToggle()
 	{

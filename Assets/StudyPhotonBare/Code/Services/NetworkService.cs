@@ -72,11 +72,12 @@ public sealed class NetworkService : IService
 			var instance = CreateRunner();
 			var sceneManager = instance.GetComponent<INetworkSceneManager>();
 			var manager = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
+			EventBus.Raise<INetworkListener>(it => it.OnLocalToken(Token));
 			var result = await instance.StartGame(new StartGameArgs {
 				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
 				SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
 				OnGameStarted = runner => { _networkRunner = runner; },
-				HostMigrationResume = manager.NetworkResume,
+				HostMigrationResume = runner => { EventBus.Raise<INetworkListener>(it => it.OnResume()); },
 			});
 
 			if (result.Ok)
@@ -85,7 +86,7 @@ public sealed class NetworkService : IService
 				await NetworkFinalize(ct);
 			}
 
-			if (!Status) EventBus.Raise<INetworkListener>(it => it.OnStatusChanged(Status));
+			if (!Status) EventBus.Raise<INetworkListener>(it => it.OnStatusChanged(false));
 		}
 	}
 
