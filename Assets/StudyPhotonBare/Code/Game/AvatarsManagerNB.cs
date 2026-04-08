@@ -94,7 +94,7 @@ public class AvatarsManagerNB : NetworkBehaviour
 		Runner.Spawn(
 			_avatarPrefab, inputAuthority: player,
 			onBeforeSpawned: (runner, instanceObject) => {
-				EventBus.RaiseTagged<IRespawnable>(instanceObject, it => { it.Respawn(); });
+				EventBus.Raise<IRespawnable>(it => { it.Respawn(); }, tag: instanceObject);
 				Runner.SetPlayerObject(player, instanceObject);
 				_instances.Add(token, instanceObject);
 			}

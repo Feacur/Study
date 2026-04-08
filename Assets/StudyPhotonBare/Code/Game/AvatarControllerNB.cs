@@ -44,8 +44,8 @@ public class AvatarControllerNB : NetworkBehaviour
 		_networkTransform = GetComponent<NetworkTransform>();
 	}
 
-	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
-	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
+	void OnEnable() => EventBus.Subscribe(this, tag: NetworkObject);
+	void OnDisable() => EventBus.Unsubscribe(this, tag: NetworkObject);
 
 	public override void Spawned()
 	{
@@ -87,7 +87,7 @@ public class AvatarControllerNB : NetworkBehaviour
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Utils.Translate2D(NWAim);
 				var position = avatarPosition + direction;
-				EventBus.RaiseTagged<IShooter>(Object, it => { it.Shoot(position: position, direction: direction); });
+				EventBus.Raise<IShooter>(it => { it.Shoot(position: position, direction: direction); }, tag: Object);
 			}
 		}
 	}
@@ -110,7 +110,7 @@ public class AvatarControllerNB : NetworkBehaviour
 
 	void IRespawnable.Respawn()
 	{
-		EventBus.RaiseTagged<IResetable>(Object, it => { it.Reset(); });
+		EventBus.Raise<IResetable>(it => { it.Reset(); }, tag: Object);
 		_networkTransform.Teleport(Utils.Translate2D(
 			Random.insideUnitCircle * 2
 		));

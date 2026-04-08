@@ -50,8 +50,8 @@ public class ArrowsControllerNB : NetworkBehaviour
 	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
 	private int LifeTicks => _lifeSeconds * Runner.TickRate;
 
-	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
-	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
+	void OnEnable() => EventBus.Subscribe(this, tag: NetworkObject);
+	void OnDisable() => EventBus.Unsubscribe(this, tag: NetworkObject);
 
 	void IShooter.Shoot(Vector3 position, Vector3 direction)
 	{
@@ -109,7 +109,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 					: null;
 				if (entity && entity != damageSource)
 				{
-					EventBus.RaiseTagged<IDamageable>(entity, it => { it.TakeDamage(); });
+					EventBus.Raise<IDamageable>(it => { it.TakeDamage(); }, tag: entity);
 					hitSomething = true;
 				}
 			}
