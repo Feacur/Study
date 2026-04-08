@@ -10,7 +10,7 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class AvatarsManagerNB : NetworkBehaviour
-	, INetworkListenerEvents
+	, INetworkListener
 	, IPlayerJoined
 	, IPlayerLeft
 {
@@ -31,13 +31,14 @@ public class AvatarsManagerNB : NetworkBehaviour
 
 	void OnDestroy()
 	{
+		EventBus.Unsubscribe(this);
 		if (Instance == this)
 			Instance = null;
 	}
 
-	void INetworkListenerEvents.OnStatusChanged(bool status) { /*dummy*/ }
+	void INetworkListener.OnStatusChanged(bool status) { /*dummy*/ }
 
-	void INetworkListenerEvents.OnLocalToken(byte[] token)
+	void INetworkListener.OnLocalToken(byte[] token)
 	{
 		_localToken = token;
 	}

@@ -1,8 +1,9 @@
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface IService
+public interface IService : IEventBusSubscriber
 {
+	void Initialize();
 }
 
 }

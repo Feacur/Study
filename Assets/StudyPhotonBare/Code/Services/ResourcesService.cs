@@ -6,15 +6,17 @@ using UnityEngine;
 namespace StudyPhotonBare.Services
 {
 
-public class ResourcesService : IService
+public sealed class ResourcesService : IService
 {
-	public readonly AvatarsManagerNB AvatarManagerNBPrefab; // @note network behaviours are destroyed by default, but can be pooled
-	public readonly NetworkRunner NetworkRunnerPrefab; // @note network runner should not be reused
+	public AvatarsManagerNB AvatarManagerNBPrefab { get; private set; } // @note network behaviours are destroyed by default, but can be pooled
+	public NetworkRunner NetworkRunnerPrefab { get; private set; } // @note network runner should not be reused
 
 	[Header("Accessors")]
 	private static readonly string Path = nameof(ResourcesService);
 
-	public ResourcesService()
+	public ResourcesService() => EventBus.Subscribe(this);
+
+	void IService.Initialize()
 	{
 		AvatarManagerNBPrefab = Load<AvatarsManagerNB>();
 		NetworkRunnerPrefab = Load<NetworkRunner>();

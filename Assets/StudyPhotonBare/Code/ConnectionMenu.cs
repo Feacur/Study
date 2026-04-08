@@ -10,7 +10,7 @@ namespace StudyPhotonBare.Root
 {
 
 public class ConnectionMenu : MonoBehaviour
-	, INetworkListenerEvents
+	, INetworkListener
 {
 	public static ConnectionMenu Instance { get; private set; }
 
@@ -50,7 +50,7 @@ public class ConnectionMenu : MonoBehaviour
 		}
 	}
 
-	void INetworkListenerEvents.OnStatusChanged(bool status)
+	void INetworkListener.OnStatusChanged(bool status)
 	{
 		_connectionStatus = status;
 		SetMenuVisible(!status);
@@ -58,13 +58,13 @@ public class ConnectionMenu : MonoBehaviour
 		_networkButton.interactable = true;
 	}
 
-	void INetworkListenerEvents.OnLocalToken(byte[] token) { /*dummy*/ }
+	void INetworkListener.OnLocalToken(byte[] token) { /*dummy*/ }
 
 	private void NetworkToggle()
 	{
 		_networkButton.interactable = false;
 		_networkText.text = "...";
-		EventBus.Raise<INetworkServiceEvents>(it => it.ToggleStatus());
+		EventBus.Raise<INetworkControl>(it => it.ToggleStatus());
 	}
 
 	private void SetMenuVisible(bool state)
