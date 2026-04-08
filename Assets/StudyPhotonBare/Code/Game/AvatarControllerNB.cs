@@ -1,4 +1,5 @@
 using Fusion;
+using StudyPhotonBare.Root;
 using StudyPhotonBare.Tools;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -31,7 +32,8 @@ public class AvatarControllerNB : NetworkBehaviour
 	private Vector3 _cameraSmoothDamp;
 
 	[Header("Accessors")]
-	private bool AreControlsEnabled => HasInputAuthority && !EntryPoint.Instance.IsMenuVisible;
+	private ConnectionMenu ConnectionMenu => ConnectionMenu.Instance;
+	private bool AreControlsEnabled => HasInputAuthority && !ConnectionMenu.IsMenuVisible;
 	private GameCameraRig CameraRig => GameCameraRig.Instance;
 	private GameCursor Cursor => GameCursor.Instance;
 
