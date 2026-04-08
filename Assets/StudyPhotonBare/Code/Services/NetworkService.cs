@@ -1,31 +1,32 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Fusion;
+using StudyPhotonBare.Enums;
 using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Tools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+
 namespace StudyPhotonBare.Services
 {
 
 public sealed class NetworkService : IService
-	, INetworkControl
+	, INetworkToggler
 {
-	public readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
-	public bool Status => _networkRunner && _networkRunner.State == NetworkRunner.States.Running;
-
 	[Header("Private")]
+	private readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
 	private NetworkRunner _networkRunner;
 
 	[Header("Accessors")]
 	private ResourcesService ResourcesService => ServiceLocator.Get<ResourcesService>();
+	private bool IsOff => !_networkRunner || _networkRunner.State == NetworkRunner.States.Shutdown;
 
 	public NetworkService() => EventBus.Subscribe(this);
 
 	void IService.Initialize() { /*dummy*/ }
 
-	void INetworkControl.ToggleStatus()
+	void INetworkToggler.ToggleNetwork()
 	{
 		var ct = Application.exitCancellationToken;
 		NetworkToggleAsync().Forget();
@@ -33,27 +34,31 @@ public sealed class NetworkService : IService
 		{
 			if (_networkRunner)
 			{
+				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Shutting));
 				await _networkRunner.Shutdown();
 				ct.ThrowIfCancellationRequested();
 				_networkRunner = null;
+				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.None));
 			}
 			else
 			{
-				var activeScene = SceneManager.GetActiveScene();
+				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Starting));
 				var instance = CreateRunner();
-				var sceneManager = instance.GetComponent<INetworkSceneManager>();
 				_ = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
-				EventBus.Raise<INetworkListener>(it => it.OnLocalToken(Token));
+
+				EventBus.Raise<INetworkTokenListener>(it => it.OnNetworkToken(Token));
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
-					SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
+					SceneManager = instance.GetComponent<INetworkSceneManager>(),
+					Scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex),
 					OnGameStarted = runner => { _networkRunner = runner; },
 				});
 
 				if (result.Ok) await NetworkFinalize(ct);
-			}
 
-			EventBus.Raise<INetworkListener>(it => it.OnStatusChanged(Status));
+				var status = IsOff ? NetworkStatus.None : NetworkStatus.Running;
+				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(status));
+			}
 		}
 	}
 
@@ -65,19 +70,20 @@ public sealed class NetworkService : IService
 		NetworkMigrateAsync().Forget();
 		async UniTaskVoid NetworkMigrateAsync()
 		{
+			EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Migrating));
 			await prevRunner.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
 			await prevRunner.Shutdown(shutdownReason: ShutdownReason.HostMigration);
 
-			var activeScene = SceneManager.GetActiveScene();
 			var instance = CreateRunner();
-			var sceneManager = instance.GetComponent<INetworkSceneManager>();
 			var manager = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
-			EventBus.Raise<INetworkListener>(it => it.OnLocalToken(Token));
+
+			EventBus.Raise<INetworkTokenListener>(it => it.OnNetworkToken(Token));
 			var result = await instance.StartGame(new StartGameArgs {
 				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
-				SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
+				SceneManager = instance.GetComponent<INetworkSceneManager>(),
+				Scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex),
 				OnGameStarted = runner => { _networkRunner = runner; },
-				HostMigrationResume = runner => { EventBus.Raise<INetworkListener>(it => it.OnResume()); },
+				HostMigrationResume = runner => { EventBus.Raise<INetworkMigrator>(it => it.MigrateHost()); },
 			});
 
 			if (result.Ok)
@@ -86,7 +92,8 @@ public sealed class NetworkService : IService
 				await NetworkFinalize(ct);
 			}
 
-			if (!Status) EventBus.Raise<INetworkListener>(it => it.OnStatusChanged(false));
+			var status = IsOff ? NetworkStatus.None : NetworkStatus.Running;
+			EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(status));
 		}
 	}
 

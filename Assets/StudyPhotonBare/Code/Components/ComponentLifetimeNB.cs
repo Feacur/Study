@@ -1,4 +1,5 @@
 using Fusion;
+using StudyPhotonBare.Interfaces;
 using TMPro;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace StudyPhotonBare.Components
 
 [RequireComponent(typeof(NetworkObject))]
 public class ComponentLifetimeNB : NetworkBehaviour
+	, IResetable
 {
 	[Header("Visuals")]
 	[SerializeField] TMP_Text _lifetimeLabel;
@@ -15,10 +17,11 @@ public class ComponentLifetimeNB : NetworkBehaviour
 	[Header("Networked")]
 	[Networked, OnChangedRender(nameof(NWLifetimeCR))] int NWLifetime { get; set; }
 
-	public void SAReset()
-	{
-		NWLifetime = 0;
-	}
+	[Header("Accessors")]
+	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
+
+	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
+	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
 
 	public override void Spawned()
 	{
@@ -29,6 +32,11 @@ public class ComponentLifetimeNB : NetworkBehaviour
 	{
 		if (HasStateAuthority)
 			NWLifetime += 1;
+	}
+
+	void IResetable.Reset()
+	{
+		NWLifetime = 0;
 	}
 
 	private void NWLifetimeCR() => 

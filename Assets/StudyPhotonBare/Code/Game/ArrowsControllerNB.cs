@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Fusion;
-using StudyPhotonBare.Components;
+using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
 using UnityEngine;
@@ -12,6 +12,7 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class ArrowsControllerNB : NetworkBehaviour
+	, IShooter
 {
 	// @note technically this can be a shared managing object,
 	// but then in shared topology we either need to chunk the
@@ -29,8 +30,8 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	[Header("Networked")]
 	[Networked] int NWArrowsCooldown { get; set; }
-	[Networked, Capacity(4), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
 	[Networked] int NWArrowsWrite { get; set; }
+	[Networked, Capacity(4), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
 
 	[Header("Private")]
 	private readonly HashSet<int> _activeIDs = new HashSet<int>();
@@ -38,16 +39,20 @@ public class ArrowsControllerNB : NetworkBehaviour
 	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
 
 	[Header("Accessors")]
+	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
 	private PoolOfGOService PoolOfGO => ServiceLocator.Get<PoolOfGOService>(); // @todo cache on spawn ?
 	private float Time => HasStateAuthority ? Runner.LocalRenderTime : Runner.RemoteRenderTime;
 	private float GetElapsed(in NSArrow arrow, float time) => time - arrow.InitTick * Runner.DeltaTime;
 	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
 	private int LifeTicks => _lifeSeconds * Runner.TickRate;
 
-	public void SASpawn(Vector3 position, Vector3 direction)
+	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
+	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
+
+	void IShooter.Shoot(Vector3 position, Vector3 direction)
 	{
 		if (NWArrowsCooldown > Runner.Tick) return;
-		NWArrowsCooldown = 1 + Mathf.Max(0, Runner.Tick + LifeTicks / NWArrows.Length);
+		NWArrowsCooldown = Runner.Tick + Mathf.Max(1, LifeTicks / NWArrows.Length);
 
 		NWArrows.Set(NWArrowsWrite, new NSArrow {
 			InitTick = Runner.Tick,
@@ -76,6 +81,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 	public override void FixedUpdateNetwork()
 	{
 		// @todo compact alive set or have read-write pointers
+		var damageSource = Object;
 		var scene = Runner.GetPhysicsScene2D();
 		for (int i = 0; i < NWArrows.Length; i++)
 		{
@@ -94,12 +100,12 @@ public class ArrowsControllerNB : NetworkBehaviour
 			for (int hitIndex = 0; hitIndex < hitsCount; hitIndex++)
 			{
 				var hit = _hits[hitIndex];
-				var hitpointsNB = hit.collider
-					? hit.collider.GetComponentInParent<ComponentHitpointsNB>()
+				var entity = hit.collider
+					? hit.collider.GetComponentInParent<NetworkObject>()
 					: null;
-				if (hitpointsNB && hitpointsNB.Object.InputAuthority != Object.InputAuthority)
+				if (entity && entity != damageSource)
 				{
-					hitpointsNB.SATakeDamage();
+					EventBus.RaiseTagged<IDamageable>(entity, it => { it.TakeDamage(); });
 					hitSomething = true;
 				}
 			}

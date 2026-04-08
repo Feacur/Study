@@ -1,4 +1,5 @@
 using Fusion;
+using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Root;
 using StudyPhotonBare.Tools;
 using UnityEngine;
@@ -9,12 +10,11 @@ namespace StudyPhotonBare.Game
 {
 
 [RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(NetworkTransform))]
 public class AvatarControllerNB : NetworkBehaviour
+	, IRespawnable
 	, IBeforeUpdate
 {
-	[Header("Systems")]
-	[SerializeField] ArrowsControllerNB _arrowsControllerNB;
-
 	[Header("Logics")]
 	[SerializeField] float _speed = 10;
 
@@ -27,15 +27,25 @@ public class AvatarControllerNB : NetworkBehaviour
 	[Networked] Vector2 NWAim { get; set; }
 
 	[Header("Private")]
+	private NetworkTransform _networkTransform;
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
 	private Vector3 _cameraSmoothDamp;
 
 	[Header("Accessors")]
+	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
 	private ConnectionMenu ConnectionMenu => ConnectionMenu.Instance;
 	private bool AreControlsEnabled => HasInputAuthority && !ConnectionMenu.IsMenuVisible;
 	private GameCameraRig CameraRig => GameCameraRig.Instance;
 	private GameCursor Cursor => GameCursor.Instance;
+
+	void Awake()
+	{
+		_networkTransform = GetComponent<NetworkTransform>();
+	}
+
+	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
+	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
 
 	public override void Spawned()
 	{
@@ -77,7 +87,7 @@ public class AvatarControllerNB : NetworkBehaviour
 				transform.GetPositionAndRotation(out var avatarPosition, out var _);
 				var direction = Utils.Translate2D(NWAim);
 				var position = avatarPosition + direction;
-				_arrowsControllerNB.SASpawn(position: position, direction: direction);
+				EventBus.RaiseTagged<IShooter>(Object, it => { it.Shoot(position: position, direction: direction); });
 			}
 		}
 	}
@@ -96,6 +106,14 @@ public class AvatarControllerNB : NetworkBehaviour
 			var targetPosition = transform.position + Utils.Translate2D(centerOffset * _cameraOffset);
 			CameraRig.transform.position = Vector3.SmoothDamp(CameraRig.transform.position, targetPosition, ref _cameraSmoothDamp, Time.unscaledDeltaTime);
 		}
+	}
+
+	void IRespawnable.Respawn()
+	{
+		EventBus.RaiseTagged<IResetable>(Object, it => { it.Reset(); });
+		_networkTransform.Teleport(Utils.Translate2D(
+			Random.insideUnitCircle * 2
+		));
 	}
 
 	void IBeforeUpdate.BeforeUpdate()

@@ -7,6 +7,7 @@ using UnityEngine.Assertions;
 using ID = System.Int32; // should be the same type as `Object.GetInstanceID()`
 using Object = UnityEngine.Object;
 
+
 namespace StudyPhotonBare.Services
 {
 
