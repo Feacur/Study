@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
-using StudyPhotonBare.Services;
+using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Tools;
 using UnityEngine;
 
@@ -10,6 +10,7 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class AvatarsManagerNB : NetworkBehaviour
+	, INetworkListenerEvents
 	, IPlayerJoined
 	, IPlayerLeft
 {
@@ -20,19 +21,25 @@ public class AvatarsManagerNB : NetworkBehaviour
 
 	[Header("Private")]
 	private readonly Dictionary<int, NetworkObject> _instances = new Dictionary<int, NetworkObject>();
-
-	[Header("Accessors")]
-	private NetworkService NetworkService => ServiceLocator.Get<NetworkService>();
+	private byte[] _localToken;
 
 	void Awake()
 	{
 		Instance = this;
+		EventBus.Subscribe(this);
 	}
 
 	void OnDestroy()
 	{
 		if (Instance == this)
 			Instance = null;
+	}
+
+	void INetworkListenerEvents.OnStatusChanged(bool status) { /*dummy*/ }
+
+	void INetworkListenerEvents.OnLocalToken(byte[] token)
+	{
+		_localToken = token;
 	}
 
 	void IPlayerJoined.PlayerJoined(PlayerRef player)
@@ -80,7 +87,7 @@ public class AvatarsManagerNB : NetworkBehaviour
 	private int GetToken(NetworkRunner runner, PlayerRef player)
 	{
 		if (runner.LocalPlayer == player)
-			return NetworkService.Token.GetHashCode();
+			return _localToken.GetHashCode();
 
 		if (HasStateAuthority)
 		{

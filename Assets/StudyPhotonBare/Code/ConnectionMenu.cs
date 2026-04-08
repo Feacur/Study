@@ -10,7 +10,6 @@ namespace StudyPhotonBare.Root
 {
 
 public class ConnectionMenu : MonoBehaviour
-	, ISubscriber
 	, INetworkListenerEvents
 {
 	public static ConnectionMenu Instance { get; private set; }
@@ -58,6 +57,8 @@ public class ConnectionMenu : MonoBehaviour
 		_networkText.text = status ? "shutdown" : "start";
 		_networkButton.interactable = true;
 	}
+
+	void INetworkListenerEvents.OnLocalToken(byte[] token) { /*dummy*/ }
 
 	private void NetworkToggle()
 	{
