@@ -13,6 +13,11 @@ public static class ServiceLocator
 	// - no chance using static interface properties with the current C# version
 	private static readonly Dictionary<Type, IService> _instances = new Dictionary<Type, IService>();
 
+	public static void Reset()
+	{
+		_instances.Clear();
+	}
+
 	public static T Get<T>() where T : IService
 	{
 		var type = typeof(T);

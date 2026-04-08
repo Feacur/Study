@@ -9,6 +9,13 @@ public static class EventBus
 	// @todo maybe pool collections
 	private static readonly Dictionary<Type, List<ISubscriber>> _subscribers = new Dictionary<Type, List<ISubscriber>>();
 
+	public static void Reset()
+	{
+		foreach (var it in _subscribers)
+			it.Value.Clear();
+		_subscribers.Clear();
+	}
+
 	public static void Subscribe<T>(T instance) where T : ISubscriber
 	{
 		var interfaces = GetInterfaces<T>();

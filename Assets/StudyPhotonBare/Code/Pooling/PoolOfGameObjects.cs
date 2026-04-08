@@ -12,12 +12,18 @@ public static class PoolOfGameObjects
 	private static GameObject _root;
 	private static readonly Dictionary<ID, Queue<PooledGameObject>> _instances = new Dictionary<ID, Queue<PooledGameObject>>();
 
-	[RuntimeInitializeOnLoadMethod] // should it be handled by the `EntryPoint` ?
-	private static void RuntimeInitializeOnLoad()
+	public static void Init()
 	{
 		_root = new GameObject($"{nameof(PoolOfGameObjects)} root");
 		_root.SetActive(false);
 		Object.DontDestroyOnLoad(_root);
+	}
+
+	public static void Reset()
+	{
+		foreach (var it in _instances)
+			it.Value.Clear();
+		_instances.Clear();
 	}
 
 	public static void WarmupAdditive(GameObject prefab, byte count)
