@@ -1,5 +1,6 @@
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 
+using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Pooling;
 using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
@@ -18,10 +19,14 @@ public static class EntryPoint
 
 		ServiceLocator.Set(new ResourcesService());
 		ServiceLocator.Set(new NetworkService());
+		ServiceLocator.Set(new PoolOfGOService());
 
-		PoolOfGameObjects.Init();
-		// @todo init via the `EventBus` ?
-		// is not appropriate for statics; but they can be singletons then (or services?)
+		// @note some nuances
+		// - should only be called once
+		// - ... meaning all the services are registered at the very start, as it is meant to
+		// - ... or services should ignore concecutive messages
+		// - ... or partially unsubscribe themselves from the bus
+		EventBus.Raise<IService>(it => it.Initialize());
 
 	#if UNITY_EDITOR // cleanup everything for
 		UnityEditor.EditorApplication.playModeStateChanged += PlayModeStateChanged;
@@ -29,11 +34,8 @@ public static class EntryPoint
 		{
 			if (state != UnityEditor.PlayModeStateChange.ExitingPlayMode) return;
 			UnityEditor.EditorApplication.playModeStateChanged -= PlayModeStateChanged;
-			// @todo reset via the `EventBus` ?
-			// then make sure it's the last and doesn't pool anything
-			EventBus.Reset();
 			ServiceLocator.Reset();
-			PoolOfGameObjects.Reset();
+			EventBus.Reset();
 		}
 	#endif
 	}

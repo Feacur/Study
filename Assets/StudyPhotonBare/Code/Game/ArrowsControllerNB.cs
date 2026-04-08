@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Fusion;
 using StudyPhotonBare.Components;
-using StudyPhotonBare.Pooling;
+using StudyPhotonBare.Services;
+using StudyPhotonBare.Tools;
 using UnityEngine;
 
 
@@ -36,6 +38,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
 
 	[Header("Accessors")]
+	private PoolOfGOService PoolOfGO => ServiceLocator.Get<PoolOfGOService>(); // @todo cache on spawn ?
 	private float Time => HasStateAuthority ? Runner.LocalRenderTime : Runner.RemoteRenderTime;
 	private float GetElapsed(in NSArrow arrow, float time) => time - arrow.InitTick * Runner.DeltaTime;
 	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
@@ -56,13 +59,17 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	public override void Spawned()
 	{
-		PoolOfGameObjects.WarmupAdditive(_prefab, (byte)NWArrows.Length);
+		PoolOfGO.WarmupAdditive(_prefab, (byte)NWArrows.Length);
 	}
 
 	public override void Despawned(NetworkRunner runner, bool hasState)
 	{
+		var poolOfGO = PoolOfGO;
+		Action<GameObject> Clear = poolOfGO != null
+			? poolOfGO.Ret
+			: Destroy;
 		foreach (var it in _instances)
-			PoolOfGameObjects.Ret(it.GO);
+			Clear(it.GO);
 		_instances.Clear();
 	}
 
@@ -140,7 +147,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 				var arrow = NWArrows[inst.ID];
 				if (!IsVisible(in arrow, time))
 				{
-					PoolOfGameObjects.Ret(inst.GO);
+					PoolOfGO.Ret(inst.GO);
 					_activeIDs.Remove(inst.ID);
 					_instances.RemoveAt(i);
 				}
@@ -157,7 +164,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 					_activeIDs.Add(id);
 					_instances.Add(new Instance {
 						ID = id,
-						GO = PoolOfGameObjects.Get(_prefab),
+						GO = PoolOfGO.Get(_prefab),
 					});
 				}
 			}

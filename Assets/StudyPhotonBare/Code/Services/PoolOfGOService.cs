@@ -1,32 +1,39 @@
+using System;
 using System.Collections.Generic;
+using StudyPhotonBare.Interfaces;
+using StudyPhotonBare.Pooling;
 using UnityEngine;
 using UnityEngine.Assertions;
 using ID = System.Int32; // should be the same type as `Object.GetInstanceID()`
+using Object = UnityEngine.Object;
 
-
-namespace StudyPhotonBare.Pooling
+namespace StudyPhotonBare.Services
 {
 
-public static class PoolOfGameObjects
+public sealed class PoolOfGOService : IService
+	, IDisposable
 {
-	private static GameObject _root;
-	private static readonly Dictionary<ID, Queue<PooledGameObject>> _instances = new Dictionary<ID, Queue<PooledGameObject>>();
+	private GameObject _root;
+	private readonly Dictionary<ID, Queue<PooledGameObject>> _instances = new Dictionary<ID, Queue<PooledGameObject>>();
 
-	public static void Init()
+	public PoolOfGOService() => EventBus.Subscribe(this);
+
+	void IService.Initialize()
 	{
-		_root = new GameObject($"{nameof(PoolOfGameObjects)} root");
+		_root = new GameObject($"{nameof(PoolOfGOService)} root");
 		_root.SetActive(false);
 		Object.DontDestroyOnLoad(_root);
 	}
 
-	public static void Reset()
+	void IDisposable.Dispose()
 	{
-		foreach (var (_, instance) in _instances)
-			instance.Clear();
+		foreach (var (_, queue) in _instances)
+			queue.Clear();
 		_instances.Clear();
+		Object.Destroy(_root);
 	}
 
-	public static void WarmupAdditive(GameObject prefab, byte count)
+	public void WarmupAdditive(GameObject prefab, byte count)
 	{
 		var pooled = prefab.GetComponent<PooledGameObject>();
 		if (pooled)
@@ -43,7 +50,7 @@ public static class PoolOfGameObjects
 		else Assert.IsTrue(false); // dev
 	}
 
-	public static GameObject Get(GameObject prefab, Transform parent = null)
+	public GameObject Get(GameObject prefab, Transform parent = null)
 	{
 		var pooled = prefab.GetComponent<PooledGameObject>();
 		if (pooled)
@@ -72,7 +79,7 @@ public static class PoolOfGameObjects
 		}
 	}
 
-	public static void Ret(GameObject instance)
+	public void Ret(GameObject instance)
 	{
 		var pooled = instance.GetComponent<PooledGameObject>();
 		if (pooled)
@@ -88,7 +95,7 @@ public static class PoolOfGameObjects
 		}
 	}
 
-	private static Queue<PooledGameObject> GetQueue(PooledGameObject pooled)
+	private Queue<PooledGameObject> GetQueue(PooledGameObject pooled)
 	{
 		var prefab = pooled.Prefab;
 		var id = prefab.GetInstanceID();

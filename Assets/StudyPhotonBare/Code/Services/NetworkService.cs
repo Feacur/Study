@@ -9,8 +9,8 @@ using UnityEngine.SceneManagement;
 namespace StudyPhotonBare.Services
 {
 
-public class NetworkService : IService
-	, INetworkServiceEvents
+public sealed class NetworkService : IService
+	, INetworkControl
 {
 	public readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
 	public bool Status => _networkRunner && _networkRunner.State == NetworkRunner.States.Running;
@@ -21,12 +21,11 @@ public class NetworkService : IService
 	[Header("Accessors")]
 	private ResourcesService ResourcesService => ServiceLocator.Get<ResourcesService>();
 
-	public NetworkService()
-	{
-		EventBus.Subscribe(this);
-	}
+	public NetworkService() => EventBus.Subscribe(this);
 
-	void INetworkServiceEvents.ToggleStatus()
+	void IService.Initialize() { /*dummy*/ }
+
+	void INetworkControl.ToggleStatus()
 	{
 		var ct = Application.exitCancellationToken;
 		NetworkToggleAsync().Forget();
@@ -44,7 +43,7 @@ public class NetworkService : IService
 				var instance = CreateRunner();
 				var sceneManager = instance.GetComponent<INetworkSceneManager>();
 				_ = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
-				EventBus.Raise<INetworkListenerEvents>(it => it.OnLocalToken(Token));
+				EventBus.Raise<INetworkListener>(it => it.OnLocalToken(Token));
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
 					SceneManager = sceneManager, Scene = SceneRef.FromIndex(activeScene.buildIndex),
@@ -54,7 +53,7 @@ public class NetworkService : IService
 				if (result.Ok) await NetworkFinalize(ct);
 			}
 
-			EventBus.Raise<INetworkListenerEvents>(it => it.OnStatusChanged(Status));
+			EventBus.Raise<INetworkListener>(it => it.OnStatusChanged(Status));
 		}
 	}
 
@@ -86,7 +85,7 @@ public class NetworkService : IService
 				await NetworkFinalize(ct);
 			}
 
-			if (!Status) EventBus.Raise<INetworkListenerEvents>(it => it.OnStatusChanged(Status));
+			if (!Status) EventBus.Raise<INetworkListener>(it => it.OnStatusChanged(Status));
 		}
 	}
 

@@ -1,7 +1,7 @@
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface ISubscriber
+public interface IEventBusSubscriber
 {
 }
 
