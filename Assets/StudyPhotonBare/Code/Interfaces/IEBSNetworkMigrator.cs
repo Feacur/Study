@@ -1,7 +1,7 @@
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface INetworkMigrator : IEventBusSubscriber
+public interface IEBSNetworkMigrator : IEventBusSubscriber
 {
 	void MigrateHost();
 }

@@ -10,8 +10,8 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class AvatarsManagerNB : NetworkBehaviour
-	, INetworkTokenListener
-	, INetworkMigrator
+	, IEBSNetworkTokenListener
+	, IEBSNetworkMigrator
 	, IPlayerJoined
 	, IPlayerLeft
 {
@@ -37,12 +37,12 @@ public class AvatarsManagerNB : NetworkBehaviour
 			Instance = null;
 	}
 
-	void INetworkTokenListener.OnNetworkToken(byte[] token)
+	void IEBSNetworkTokenListener.OnNetworkToken(byte[] token)
 	{
 		_localToken = token;
 	}
 
-	void INetworkMigrator.MigrateHost()
+	void IEBSNetworkMigrator.MigrateHost()
 	{
 		foreach (var prevObject in Runner.GetResumeSnapshotNetworkObjects())
 		{
@@ -94,7 +94,7 @@ public class AvatarsManagerNB : NetworkBehaviour
 		Runner.Spawn(
 			_avatarPrefab, inputAuthority: player,
 			onBeforeSpawned: (runner, instanceObject) => {
-				EventBus.Raise<IRespawnable>(it => { it.Respawn(); }, tag: instanceObject);
+				EventBus.Raise<IEBSRespawnable>(it => { it.Respawn(); }, tag: instanceObject);
 				Runner.SetPlayerObject(player, instanceObject);
 				_instances.Add(token, instanceObject);
 			}

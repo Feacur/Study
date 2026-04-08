@@ -12,6 +12,7 @@ namespace StudyPhotonBare.Services
 {
 
 public sealed class PoolOfGOService : IService
+	, IEBSInitializeable
 	, IDisposable
 {
 	private GameObject _root;
@@ -19,8 +20,9 @@ public sealed class PoolOfGOService : IService
 
 	public PoolOfGOService() => EventBus.Subscribe(this);
 
-	void IService.Initialize()
+	void IEBSInitializeable.Initialize()
 	{
+		EventBus.Unsubscribe<IEBSInitializeable>(this); // unsubscribe only for the initialization inteface
 		_root = new GameObject($"{nameof(PoolOfGOService)} root");
 		_root.SetActive(false);
 		Object.DontDestroyOnLoad(_root);

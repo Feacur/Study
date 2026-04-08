@@ -12,7 +12,7 @@ namespace StudyPhotonBare.Services
 {
 
 public sealed class NetworkService : IService
-	, INetworkToggler
+	, IEBSNetworkToggler
 {
 	[Header("Private")]
 	private readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
@@ -24,9 +24,7 @@ public sealed class NetworkService : IService
 
 	public NetworkService() => EventBus.Subscribe(this);
 
-	void IService.Initialize() { /*dummy*/ }
-
-	void INetworkToggler.ToggleNetwork()
+	void IEBSNetworkToggler.ToggleNetwork()
 	{
 		var ct = Application.exitCancellationToken;
 		NetworkToggleAsync().Forget();
@@ -34,19 +32,19 @@ public sealed class NetworkService : IService
 		{
 			if (_networkRunner)
 			{
-				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Shutting));
+				EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Shutting));
 				await _networkRunner.Shutdown();
 				ct.ThrowIfCancellationRequested();
 				_networkRunner = null;
-				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.None));
+				EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.None));
 			}
 			else
 			{
-				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Starting));
+				EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Starting));
 				var instance = CreateRunner();
 				_ = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
 
-				EventBus.Raise<INetworkTokenListener>(it => it.OnNetworkToken(Token));
+				EventBus.Raise<IEBSNetworkTokenListener>(it => it.OnNetworkToken(Token));
 				var result = await instance.StartGame(new StartGameArgs {
 					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
 					SceneManager = instance.GetComponent<INetworkSceneManager>(),
@@ -57,7 +55,7 @@ public sealed class NetworkService : IService
 				if (result.Ok) await NetworkFinalize(ct);
 
 				var status = IsOff ? NetworkStatus.None : NetworkStatus.Running;
-				EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(status));
+				EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(status));
 			}
 		}
 	}
@@ -70,20 +68,20 @@ public sealed class NetworkService : IService
 		NetworkMigrateAsync().Forget();
 		async UniTaskVoid NetworkMigrateAsync()
 		{
-			EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Migrating));
+			EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Migrating));
 			await prevRunner.PushHostMigrationSnapshot(); // @note experiments showed it will likely fail
 			await prevRunner.Shutdown(shutdownReason: ShutdownReason.HostMigration);
 
 			var instance = CreateRunner();
 			var manager = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
 
-			EventBus.Raise<INetworkTokenListener>(it => it.OnNetworkToken(Token));
+			EventBus.Raise<IEBSNetworkTokenListener>(it => it.OnNetworkToken(Token));
 			var result = await instance.StartGame(new StartGameArgs {
 				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
 				SceneManager = instance.GetComponent<INetworkSceneManager>(),
 				Scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex),
 				OnGameStarted = runner => { _networkRunner = runner; },
-				HostMigrationResume = runner => { EventBus.Raise<INetworkMigrator>(it => it.MigrateHost()); },
+				HostMigrationResume = runner => { EventBus.Raise<IEBSNetworkMigrator>(it => it.MigrateHost()); },
 			});
 
 			if (result.Ok)
@@ -93,7 +91,7 @@ public sealed class NetworkService : IService
 			}
 
 			var status = IsOff ? NetworkStatus.None : NetworkStatus.Running;
-			EventBus.Raise<INetworkStatusListener>(it => it.OnNetworkStatus(status));
+			EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(status));
 		}
 	}
 

@@ -3,7 +3,7 @@ using StudyPhotonBare.Enums;
 namespace StudyPhotonBare.Interfaces
 {
 
-public interface INetworkStatusListener : IEventBusSubscriber
+public interface IEBSNetworkStatusListener : IEventBusSubscriber
 {
 	void OnNetworkStatus(NetworkStatus status);
 }
