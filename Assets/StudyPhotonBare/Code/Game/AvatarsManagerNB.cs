@@ -43,6 +43,48 @@ public class AvatarsManagerNB : NetworkBehaviour
 		_localToken = token;
 	}
 
+	void INetworkListener.OnResume()
+	{
+		foreach (var prevObject in Runner.GetResumeSnapshotNetworkObjects())
+		{
+			if (!prevObject.NetworkTypeId.IsPrefab) continue;
+
+			var token = GetToken(Runner, prevObject.InputAuthority);
+			if (token == 0) continue;
+
+			_instances.Add(token, null);
+
+			var position = Vector3.zero;
+			var rotation = Quaternion.identity;
+			if (prevObject.TryGetBehaviour(out NetworkTRSP prevTRSP))
+			{
+				position = prevTRSP.Data.Position;
+				rotation = prevTRSP.Data.Rotation;
+			}
+
+			Runner.Spawn(prevObject,
+				inputAuthority: prevObject.InputAuthority,
+				position: position, rotation: rotation,
+				onBeforeSpawned: (runner, instanceObject) => {
+					runner.SetPlayerObject(prevObject.InputAuthority, instanceObject);
+					_instances[token] = instanceObject;
+
+					var avatarNB = instanceObject.GetComponent<AvatarNB>();
+					avatarNB.SAReset();
+
+					instanceObject.CopyStateFrom(prevObject);
+
+					var prevNBs = prevObject.GetComponents<NetworkBehaviour>();
+					foreach (var prevNB in prevNBs)
+					{
+						var instNB = (NetworkBehaviour)instanceObject.GetComponent(prevNB.GetType());
+						if (instNB) instNB.CopyStateFrom(prevNB);
+					}
+				}
+			);
+		}
+	}
+
 	void IPlayerJoined.PlayerJoined(PlayerRef player)
 	{
 		// @note the trick is that this manager belongs to the local player,
@@ -97,48 +139,6 @@ public class AvatarsManagerNB : NetworkBehaviour
 		}
 
 		return 0;
-	}
-
-	public void NetworkResume(NetworkRunner runner)
-	{
-		foreach (var prevObject in runner.GetResumeSnapshotNetworkObjects())
-		{
-			if (!prevObject.NetworkTypeId.IsPrefab) continue;
-
-			var token = GetToken(runner, prevObject.InputAuthority);
-			if (token == 0) continue;
-
-			_instances.Add(token, null);
-
-			var position = Vector3.zero;
-			var rotation = Quaternion.identity;
-			if (prevObject.TryGetBehaviour(out NetworkTRSP prevTRSP))
-			{
-				position = prevTRSP.Data.Position;
-				rotation = prevTRSP.Data.Rotation;
-			}
-
-			runner.Spawn(prevObject,
-				inputAuthority: prevObject.InputAuthority,
-				position: position, rotation: rotation,
-				onBeforeSpawned: (runner, instanceObject) => {
-					runner.SetPlayerObject(prevObject.InputAuthority, instanceObject);
-					_instances[token] = instanceObject;
-
-					var avatarNB = instanceObject.GetComponent<AvatarNB>();
-					avatarNB.SAReset();
-
-					instanceObject.CopyStateFrom(prevObject);
-
-					var prevNBs = prevObject.GetComponents<NetworkBehaviour>();
-					foreach (var prevNB in prevNBs)
-					{
-						var instNB = (NetworkBehaviour)instanceObject.GetComponent(prevNB.GetType());
-						if (instNB) instNB.CopyStateFrom(prevNB);
-					}
-				}
-			);
-		}
 	}
 }
 
