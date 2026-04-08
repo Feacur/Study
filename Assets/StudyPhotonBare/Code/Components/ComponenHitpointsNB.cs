@@ -1,4 +1,5 @@
 using Fusion;
+using StudyPhotonBare.Interfaces;
 using TMPro;
 using UnityEngine;
 
@@ -8,8 +9,9 @@ namespace StudyPhotonBare.Components
 
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkTransform))]
-[RequireComponent(typeof(AvatarNB))]
 public class ComponentHitpointsNB : NetworkBehaviour
+	, IResetable
+	, IDamageable
 {
 	private const int HITPOINTS_MAX = 3;
 	private const int HITPOINTS_DMG = 1;
@@ -19,26 +21,27 @@ public class ComponentHitpointsNB : NetworkBehaviour
 	[Header("Networked")]
 	[Networked, OnChangedRender(nameof(NWHitpointsCR))] int NWHitpoints { get; set; }
 
-	public void SAReset()
-	{
-		NWHitpoints = HITPOINTS_MAX;
-	}
+	[Header("Accessors")]
+	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
 
-	public void SATakeDamage()
-	{
-		if (NWHitpoints > HITPOINTS_DMG)
-			NWHitpoints -= HITPOINTS_DMG;
-		else
-		{
-			// @todo decouple
-			var avatarNB = GetComponent<AvatarNB>();
-			avatarNB.SAReset();
-		}
-	}
+	void OnEnable() => EventBus.SubscribeTagged(NetworkObject, this);
+	void OnDisable() => EventBus.UnsubscribeTagged(NetworkObject, this);
 
 	public override void Spawned()
 	{
 		NWHitpointsCR();
+	}
+
+	void IResetable.Reset()
+	{
+		NWHitpoints = HITPOINTS_MAX;
+	}
+
+	void IDamageable.TakeDamage()
+	{
+		NWHitpoints -= HITPOINTS_DMG;
+		if (NWHitpoints <= 0)
+			EventBus.RaiseTagged<IRespawnable>(Object, it => { it.Respawn(); });
 	}
 
 	private void NWHitpointsCR() => 

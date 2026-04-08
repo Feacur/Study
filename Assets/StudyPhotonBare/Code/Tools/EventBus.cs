@@ -2,55 +2,59 @@ using System;
 using System.Collections.Generic;
 using StudyPhotonBare.Interfaces;
 
+
 public static class EventBus
 {
 	private static readonly Type ISubscriberType = typeof(IEventBusSubscriber);
 
-	// @todo maybe pool collections
-	private static readonly Dictionary<Type, List<IEventBusSubscriber>> _subscribers = new Dictionary<Type, List<IEventBusSubscriber>>();
+	private static readonly Subscriptions global = new Subscriptions();
+	private static readonly Dictionary<object, Subscriptions> tagged = new Dictionary<object, Subscriptions>();
 
 	public static void Reset()
 	{
-		foreach (var (_, instance) in _subscribers)
-			instance.Clear();
-		_subscribers.Clear();
+		global.Reset();
+		foreach (var (_, local) in tagged)
+			local.Reset();
 	}
 
 	public static void Subscribe<T>(T instance) where T : IEventBusSubscriber
 	{
-		var interfaces = GetInterfaces<T>();
-		foreach (var type in interfaces)
-		{
-			if (!_subscribers.TryGetValue(type, out var instances))
-				_subscribers.Add(type, instances = new List<IEventBusSubscriber>());
-			instances.Add(instance);
-		}
+		global.Subscribe(instance);
+		foreach (var (_, local) in tagged)
+			local.Subscribe(instance);
 	}
 
 	public static void Unsubscribe<T>(T instance) where T : IEventBusSubscriber
 	{
-		var interfaces = GetInterfaces<T>();
-		foreach (var type in interfaces)
-		{
-			if (!_subscribers.TryGetValue(type, out var instances))
-				_subscribers.Add(type, instances = new List<IEventBusSubscriber>());
-			instances.Remove(instance);
-			if (instances.Count == 0)
-				_subscribers.Remove(type);
-		}
+		global.Unsubscribe(instance);
+		foreach (var (_, local) in tagged)
+			local.Unsubscribe(instance);
 	}
 
 	public static void Raise<T>(Action<T> action) where T : IEventBusSubscriber
+		=> global.Raise(action);
+
+	public static void SubscribeTagged<T>(object tag, T instance) where T : IEventBusSubscriber
 	{
-		var type = typeof(T);
-		if (!_subscribers.TryGetValue(type, out var instances))
-			return;
-		// @todo make sure no one changes the iterated list
-		foreach (var instance in instances)
+		if (!tagged.TryGetValue(tag, out var subs))
+			tagged.Add(tag, subs = new Subscriptions());
+		subs.Subscribe(instance);
+	}
+
+	public static void UnsubscribeTagged<T>(object tag, T instance) where T : IEventBusSubscriber
+	{
+		if (tagged.TryGetValue(tag, out var local))
 		{
-			var typedInstance = (T)instance;
-			action(typedInstance);
+			local.Unsubscribe(instance);
+			if (local.Count == 0)
+				tagged.Remove(tag);
 		}
+	}
+
+	public static void RaiseTagged<T>(object tag, Action<T> action) where T : IEventBusSubscriber
+	{
+		if (tagged.TryGetValue(tag, out var local))
+			local.Raise(action);
 	}
 
 	private static IEnumerable<Type> GetInterfaces<T>() where T : IEventBusSubscriber
@@ -62,6 +66,58 @@ public static class EventBus
 			if (it == ISubscriberType) continue;
 			if (!ISubscriberType.IsAssignableFrom(it)) continue;
 			yield return it;
+		}
+	}
+
+	private class Subscriptions
+	{
+		// @todo maybe pool collections
+		private readonly Dictionary<Type, List<IEventBusSubscriber>> _instances = new Dictionary<Type, List<IEventBusSubscriber>>();
+
+		public int Count => _instances.Count;
+
+		public void Reset()
+		{
+			foreach (var (_, listeners) in _instances)
+				listeners.Clear();
+			_instances.Clear();
+		}
+
+		public void Subscribe<T>(T instance) where T : IEventBusSubscriber
+		{
+			var interfaces = GetInterfaces<T>();
+			foreach (var type in interfaces)
+			{
+				if (!_instances.TryGetValue(type, out var instances))
+					_instances.Add(type, instances = new List<IEventBusSubscriber>());
+				instances.Add(instance);
+			}
+		}
+
+		public void Unsubscribe<T>(T instance) where T : IEventBusSubscriber
+		{
+			var interfaces = GetInterfaces<T>();
+			foreach (var type in interfaces)
+			{
+				if (!_instances.TryGetValue(type, out var listeners))
+					_instances.Add(type, listeners = new List<IEventBusSubscriber>());
+				listeners.Remove(instance);
+				if (listeners.Count == 0)
+					_instances.Remove(type);
+			}
+		}
+
+		public void Raise<T>(Action<T> action) where T : IEventBusSubscriber
+		{
+			var type = typeof(T);
+			if (!_instances.TryGetValue(type, out var listeners))
+				return;
+			// @todo make sure no one changes the iterated list
+			foreach (var instance in listeners)
+			{
+				var typedInstance = (T)instance;
+				action(typedInstance);
+			}
 		}
 	}
 }

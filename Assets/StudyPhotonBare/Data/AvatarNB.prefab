@@ -801,8 +801,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c424e3348d4103746bdbc70fc3c17c70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: StudyPhotonBare::Avatar
-  _lifetimeNB: {fileID: -4536473946539817215}
-  _hitpointsNB: {fileID: 5422142981598480520}
 --- !u!114 &-4536473946539817215
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -841,7 +839,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffea592272b7fc7439f0628c993ba581, type: 3}
   m_Name: 
   m_EditorClassIdentifier: StudyPhotonBare::AvatarControllerNB
-  _arrowsControllerNB: {fileID: -3902008561165140810}
   _speed: 10
   _cameraOffset: 10
   _crAimSpeed: 5

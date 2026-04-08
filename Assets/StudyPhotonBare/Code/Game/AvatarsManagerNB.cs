@@ -10,7 +10,8 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class AvatarsManagerNB : NetworkBehaviour
-	, INetworkListener
+	, INetworkTokenListener
+	, INetworkMigrator
 	, IPlayerJoined
 	, IPlayerLeft
 {
@@ -36,14 +37,12 @@ public class AvatarsManagerNB : NetworkBehaviour
 			Instance = null;
 	}
 
-	void INetworkListener.OnStatusChanged(bool status) { /*dummy*/ }
-
-	void INetworkListener.OnLocalToken(byte[] token)
+	void INetworkTokenListener.OnNetworkToken(byte[] token)
 	{
 		_localToken = token;
 	}
 
-	void INetworkListener.OnResume()
+	void INetworkMigrator.MigrateHost()
 	{
 		foreach (var prevObject in Runner.GetResumeSnapshotNetworkObjects())
 		{
@@ -68,9 +67,6 @@ public class AvatarsManagerNB : NetworkBehaviour
 				onBeforeSpawned: (runner, instanceObject) => {
 					runner.SetPlayerObject(prevObject.InputAuthority, instanceObject);
 					_instances[token] = instanceObject;
-
-					var avatarNB = instanceObject.GetComponent<AvatarNB>();
-					avatarNB.SAReset();
 
 					instanceObject.CopyStateFrom(prevObject);
 
@@ -98,11 +94,9 @@ public class AvatarsManagerNB : NetworkBehaviour
 		Runner.Spawn(
 			_avatarPrefab, inputAuthority: player,
 			onBeforeSpawned: (runner, instanceObject) => {
+				EventBus.RaiseTagged<IRespawnable>(instanceObject, it => { it.Respawn(); });
 				Runner.SetPlayerObject(player, instanceObject);
 				_instances.Add(token, instanceObject);
-
-				var avatarNB = instanceObject.GetComponent<AvatarNB>();
-				avatarNB.SAReset();
 			}
 		);
 		Runner.PushHostMigrationSnapshot();

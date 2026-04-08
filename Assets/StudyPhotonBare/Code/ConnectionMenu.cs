@@ -1,3 +1,4 @@
+using StudyPhotonBare.Enums;
 using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Tools;
 using TMPro;
@@ -10,7 +11,7 @@ namespace StudyPhotonBare.Root
 {
 
 public class ConnectionMenu : MonoBehaviour
-	, INetworkListener
+	, INetworkStatusListener
 {
 	public static ConnectionMenu Instance { get; private set; }
 
@@ -18,8 +19,8 @@ public class ConnectionMenu : MonoBehaviour
 	[SerializeField] Button _networkButton;
 	[SerializeField] TMP_Text _networkText;
 
-	[Header("Accessors")]
-	private bool _connectionStatus;
+	[Header("Private")]
+	private NetworkStatus _networkStatus;
 
 	[Header("Accessors")]
 	private GameCursor Cursor => GameCursor.Instance;
@@ -29,7 +30,7 @@ public class ConnectionMenu : MonoBehaviour
 	{
 		Instance = this;
 		EventBus.Subscribe(this);
-		_networkButton.onClick.AddListener(NetworkToggle);
+		_networkButton.onClick.AddListener(ToggleNetwork);
 		_networkButton.gameObject.SetActive(true);
 		_networkText.text = "network";
 	}
@@ -37,7 +38,7 @@ public class ConnectionMenu : MonoBehaviour
 	void OnDestroy()
 	{
 		EventBus.Unsubscribe(this);
-		_networkButton.onClick.RemoveListener(NetworkToggle);
+		_networkButton.onClick.RemoveListener(ToggleNetwork);
 		if (Instance == this)
 			Instance = null;
 	}
@@ -45,34 +46,54 @@ public class ConnectionMenu : MonoBehaviour
 	void Update()
 	{
 		var keyboard = Keyboard.current;
-		if (_connectionStatus && keyboard.escapeKey.wasPressedThisFrame) {
+		if (CanToggleMenu() && keyboard.escapeKey.wasPressedThisFrame) {
 			SetMenuVisible(!IsMenuVisible);
 		}
 	}
 
-	void INetworkListener.OnStatusChanged(bool status)
+	void INetworkStatusListener.OnNetworkStatus(NetworkStatus status)
 	{
-		_connectionStatus = status;
-		SetMenuVisible(!status);
-		_networkText.text = status ? "shutdown" : "start";
-		_networkButton.interactable = true;
+		_networkStatus = status;
+		switch (status)
+		{
+			case NetworkStatus.None:
+				SetMenuVisible(true);
+				_networkText.text = "Connect";
+				_networkButton.interactable = true;
+				break;
+
+			case NetworkStatus.Running:
+				SetMenuVisible(false);
+				_networkText.text = "Shutdown";
+				_networkButton.interactable = true;
+				break;
+
+			case NetworkStatus.Starting:
+			case NetworkStatus.Migrating:
+			case NetworkStatus.Shutting:
+				SetMenuVisible(true);
+				_networkText.text = status.ToString();
+				_networkButton.interactable = false;
+				break;
+		}
 	}
 
-	void INetworkListener.OnLocalToken(byte[] token) { /*dummy*/ }
-	void INetworkListener.OnResume() { /*dummy*/ }
-
-
-	private void NetworkToggle()
-	{
-		_networkButton.interactable = false;
-		_networkText.text = "...";
-		EventBus.Raise<INetworkControl>(it => it.ToggleStatus());
-	}
+	private void ToggleNetwork() => EventBus.Raise<INetworkToggler>(it => it.ToggleNetwork());
 
 	private void SetMenuVisible(bool state)
 	{
 		_networkButton.gameObject.SetActive(state);
 		Cursor.SetConfined(!state);
+	}
+
+	private bool CanToggleMenu()
+	{
+		switch (_networkStatus)
+		{
+			case NetworkStatus.Running:
+				return true;
+		}
+		return false;
 	}
 }
 
