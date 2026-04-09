@@ -15,9 +15,12 @@ public class AvatarControllerNB : NetworkBehaviour
 {
 	[Header("Logics")] // @todo CMS
 	[SerializeField] float _speed = 10;
+	[SerializeField] Transform _cameraTarget;
 
 	[Header("Visuals")]
-	[SerializeField] float _cameraOffset = 10;
+	[SerializeField] float _lookRadius = 1;
+	[SerializeField] float _lookSpeed = 100;
+	[SerializeField] float _lookInertia = 0.1f;
 	[SerializeField] float _crAimSpeed = 5;
 	[SerializeField] Transform _aimTransform;
 
@@ -27,7 +30,7 @@ public class AvatarControllerNB : NetworkBehaviour
 	[Header("Private")]
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
-	private Vector3 _cameraSmoothDamp;
+	private Vector2 _cameraVelocity;
 
 	[Header("Accessors")]
 	private ConnectionMenu ConnectionMenu => ConnectionMenu.Instance;
@@ -37,7 +40,6 @@ public class AvatarControllerNB : NetworkBehaviour
 
 	public override void Spawned()
 	{
-		name = $"Avatar {Object.InputAuthority}";
 		if (HasInputAuthority)
 		{
 			var events = Runner.GetComponent<NetworkEvents>();
@@ -67,15 +69,14 @@ public class AvatarControllerNB : NetworkBehaviour
 
 			{
 				var deltaMove = input.move * (_speed * Runner.DeltaTime);
-				transform.position += Utils.Translate2D(deltaMove);
+				var targetPosition = (Vector2)transform.position + deltaMove;
+				transform.position = targetPosition;
 			}
 
 			if (input.buttons.IsSet(InputData.ACTION_ATTACK))
 			{ // player would expect to shoot at where they've aimed; either before or after transform changes
-				transform.GetPositionAndRotation(out var avatarPosition, out var _);
-				var direction = Utils.Translate2D(NWAim);
-				var position = avatarPosition + direction;
-				EventBus.Raise<IEBSShooter>(it => { it.Shoot(position: position, direction: direction); }, tag: Object);
+				var position = (Vector2)transform.position + input.aim;
+				EventBus.Raise<IEBSShooter>(it => { it.Shoot(position: position, direction: input.aim); }, tag: Object);
 			}
 		}
 	}
@@ -83,16 +84,23 @@ public class AvatarControllerNB : NetworkBehaviour
 	public override void Render()
 	{
 		{
-			var target = Utils.Translate2D(NWAim * 0.5f);
+			var target = NWAim * 0.5f;
 			var distance = _crAimSpeed * Time.unscaledDeltaTime;
-			_aimTransform.localPosition = Vector3.MoveTowards(_aimTransform.localPosition, target, distance);
+			_aimTransform.localPosition = Vector2.MoveTowards(_aimTransform.localPosition, target, distance);
 		}
-
 		if (AreControlsEnabled)
 		{
-			var centerOffset = Cursor.GetCenterOffsetRelative();
-			var targetPosition = transform.position + Utils.Translate2D(centerOffset * _cameraOffset);
-			CameraRig.transform.position = Vector3.SmoothDamp(CameraRig.transform.position, targetPosition, ref _cameraSmoothDamp, Time.unscaledDeltaTime);
+			var maxOffset = _lookRadius * CameraRig.ZOffset;
+			var cursorOffset = Cursor.GetCenterOffsetRelative();
+			var cameraOffset = cursorOffset * maxOffset;
+			var targetPosition = (Vector2)_cameraTarget.position + cameraOffset;
+			CameraRig.transform.position = Vector2.SmoothDamp(current: CameraRig.transform.position,
+				target: targetPosition,
+				currentVelocity: ref _cameraVelocity,
+				smoothTime: _lookInertia,
+				maxSpeed: _lookSpeed,
+				deltaTime: Time.deltaTime
+			);
 		}
 	}
 
@@ -126,7 +134,7 @@ public class AvatarControllerNB : NetworkBehaviour
 				}
 
 				{
-					var aim = Cursor.transform.position - transform.position;
+					var aim = Cursor.Position - (Vector2)transform.position;
 					_inputAccumulated.aim = aim;
 				}
 			}

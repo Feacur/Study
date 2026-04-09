@@ -1,45 +1,42 @@
 using Fusion;
 using StudyPhotonBare.Interfaces;
-using StudyPhotonBare.Tools;
 using UnityEngine;
+using PlayerID = System.Int32;
 
 
 namespace StudyPhotonBare
 {
 
-[RequireComponent(typeof(NetworkTransform))]
 [RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(NetworkTransform))]
 public class AvatarNB : NetworkBehaviour
 	, IEBSInitializeable
 	, IEBSHitpointsListener
+	, IEBSPlayerIDListener
+	, IEBSNetworkMigrationListener
 {
+	public PlayerID PlayerID => NWPlayerID;
+
+	[Header("Networked")]
+	[Networked] PlayerID NWPlayerID { get; set; } // @todo store in the `GameManagerNB` ? needs spawning fixes
+
 	[Header("Private")]
-	private NetworkTransform _networkTransform;
+	private NetworkTransform _nwTransform;
 
 	[Header("Accessors")]
 	private NetworkObject Tag => GetComponent<NetworkObject>(); // need this ref before spawn
 
-	void Awake()
-	{
-		_networkTransform = GetComponent<NetworkTransform>();
-	}
-
 	void OnEnable() => EventBus.Subscribe(this, tag: Tag);
 	void OnDisable() => EventBus.Unsubscribe(this, tag: Tag);
 
-	public override void Spawned()
+	void Awake()
 	{
-		name = $"{nameof(AvatarNB)} {Object.InputAuthority}";
-	}
-
-	public override void Despawned(NetworkRunner runner, bool hasState)
-	{
-		name += " [despawned]";
+		_nwTransform = GetComponent<NetworkTransform>();
 	}
 
 	void IEBSInitializeable.Initialize()
 	{
-		EventBus.Unsubscribe<IEBSInitializeable>(this, tag: Tag); // unsubscribe only for the initialization inteface
+		EventBus.Unsubscribe<IEBSInitializeable>(this, tag: Tag);
 		Respawn();
 	}
 
@@ -48,12 +45,25 @@ public class AvatarNB : NetworkBehaviour
 		if (current <= 0) Respawn();
 	}
 
+	void IEBSPlayerIDListener.OnPlayerID(PlayerID playerID)
+	{
+		EventBus.Unsubscribe<IEBSPlayerIDListener>(this, tag: Tag);
+		NWPlayerID = playerID;
+	}
+
+	void IEBSNetworkMigrationListener.OnHostMigrated()
+	{
+		// @note this object is already initialized, remove subs
+		EventBus.Unsubscribe<IEBSNetworkMigrationListener>(this, tag: Tag);
+		EventBus.Unsubscribe<IEBSInitializeable>(this, tag: Tag);
+		EventBus.Unsubscribe<IEBSPlayerIDListener>(this, tag: Tag);
+	}
+
 	private void Respawn()
 	{
 		EventBus.Raise<IEBSResetable>(it => { it.Reset(); }, tag: Object);
-		_networkTransform.Teleport(Utils.Translate2D(
-			Random.insideUnitCircle * 2
-		));
+		var targetPosition = Random.insideUnitCircle * 2;
+		_nwTransform.Teleport(targetPosition);
 	}
 }
 

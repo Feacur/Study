@@ -10,8 +10,11 @@ namespace StudyPhotonBare.Services
 public sealed class ResourcesService : IService
 	, IEBSInitializeable
 {
-	public AvatarsManagerNB AvatarManagerNBPrefab { get; private set; } // @note network behaviours are destroyed by default, but can be pooled
-	public NetworkRunner NetworkRunnerPrefab { get; private set; } // @note network runner should not be reused
+	// @note network behaviours are destroyed by default, but can be pooled
+	public GameManagerNB AvatarManagerNBPrefab;
+	public PickupManagerNB PickupManagerNBPrefab;
+	// @note network runner should not be reused
+	public NetworkRunner NetworkRunnerPrefab;
 
 	[Header("Accessors")]
 	private static readonly string Path = nameof(ResourcesService);
@@ -20,16 +23,16 @@ public sealed class ResourcesService : IService
 
 	void IEBSInitializeable.Initialize()
 	{
-		EventBus.Unsubscribe<IEBSInitializeable>(this); // unsubscribe only for the initialization inteface
-		AvatarManagerNBPrefab = Load<AvatarsManagerNB>();
-		NetworkRunnerPrefab = Load<NetworkRunner>();
+		EventBus.Unsubscribe<IEBSInitializeable>(this);
+		Load(out AvatarManagerNBPrefab);
+		Load(out PickupManagerNBPrefab);
+		Load(out NetworkRunnerPrefab);
 	}
 
-	private static T Load<T>() where T : Object
+	private static void Load<T>(out T instance) where T : Object
 	{
 		var path = $"{Path}/{typeof(T).Name}";
-		var ret = Resources.Load<T>(path);
-		return ret;
+		instance = Resources.Load<T>(path);
 	}
 }
 

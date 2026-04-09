@@ -8,7 +8,6 @@ namespace StudyPhotonBare.Components
 {
 
 [RequireComponent(typeof(NetworkObject))]
-[RequireComponent(typeof(NetworkTransform))]
 public class ComponentHitpointsNB : NetworkBehaviour
 	, IEBSDamageable
 	, IEBSResetable
