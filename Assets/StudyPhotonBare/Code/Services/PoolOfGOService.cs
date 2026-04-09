@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using StudyPhotonBare.Interfaces;
-using StudyPhotonBare.Pooling;
+using StudyPhotonBare.Components;
 using UnityEngine;
 using UnityEngine.Assertions;
 using ID = System.Int32; // should be the same type as `Object.GetInstanceID()`

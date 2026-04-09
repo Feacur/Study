@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 
-namespace StudyPhotonBare.Pooling
+namespace StudyPhotonBare.Components
 {
 
 public class PooledGameObject : MonoBehaviour
