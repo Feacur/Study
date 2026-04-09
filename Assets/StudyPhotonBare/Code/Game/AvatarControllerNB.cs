@@ -15,7 +15,7 @@ public class AvatarControllerNB : NetworkBehaviour
 	, IEBSRespawnable
 	, IBeforeUpdate
 {
-	[Header("Logics")]
+	[Header("Logics")] // @todo CMS
 	[SerializeField] float _speed = 10;
 
 	[Header("Visuals")]

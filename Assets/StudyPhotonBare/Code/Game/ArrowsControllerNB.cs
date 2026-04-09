@@ -20,10 +20,11 @@ public class ArrowsControllerNB : NetworkBehaviour
 	// authority over the projectile - and then it's a mix
 	// of complete p2p and host/client variant. shady
 
-	[Header("Logics")]
+	[Header("Logics")] // @todo CMS
 	[SerializeField] int _lifeSeconds = 1;
 	[SerializeField] float _speed = 20;
 	[SerializeField] ContactFilter2D _contactFilter;
+	[SerializeField] int _damage = 1;
 
 	[Header("Visuals")]
 	[SerializeField] GameObject _prefab;
@@ -110,7 +111,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 					: null;
 				if (entity && entity != damageSource)
 				{
-					EventBus.Raise<IEBSDamageable>(it => { it.TakeDamage(); }, tag: entity);
+					EventBus.Raise<IEBSDamageable>(it => { it.TakeDamage(_damage); }, tag: entity);
 					hitSomething = true;
 				}
 			}

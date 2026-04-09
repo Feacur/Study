@@ -13,9 +13,10 @@ public class ComponentHitpointsNB : NetworkBehaviour
 	, IEBSResetable
 	, IEBSDamageable
 {
-	private const int HITPOINTS_MAX = 3;
-	private const int HITPOINTS_DMG = 1;
+	[Header("Logics")] // @todo CMS
+	[SerializeField] int _max = 3;
 
+	[Header("Visuals")]
 	[SerializeField] TMP_Text _hitpointsLabel;
 
 	[Header("Networked")]
@@ -34,12 +35,12 @@ public class ComponentHitpointsNB : NetworkBehaviour
 
 	void IEBSResetable.Reset()
 	{
-		NWHitpoints = HITPOINTS_MAX;
+		NWHitpoints = _max;
 	}
 
-	void IEBSDamageable.TakeDamage()
+	void IEBSDamageable.TakeDamage(int damage)
 	{
-		NWHitpoints -= HITPOINTS_DMG;
+		NWHitpoints -= damage;
 		if (NWHitpoints <= 0)
 			EventBus.Raise<IEBSRespawnable>(it => { it.Respawn(); }, tag: Object);
 	}
