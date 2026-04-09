@@ -33,7 +33,7 @@ public class AvatarControllerNB : NetworkBehaviour
 	private Vector3 _cameraSmoothDamp;
 
 	[Header("Accessors")]
-	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
+	private NetworkObject Tag => GetComponent<NetworkObject>(); // need this ref before spawn
 	private ConnectionMenu ConnectionMenu => ConnectionMenu.Instance;
 	private bool AreControlsEnabled => HasInputAuthority && !ConnectionMenu.IsMenuVisible;
 	private GameCameraRig CameraRig => GameCameraRig.Instance;
@@ -44,8 +44,8 @@ public class AvatarControllerNB : NetworkBehaviour
 		_networkTransform = GetComponent<NetworkTransform>();
 	}
 
-	void OnEnable() => EventBus.Subscribe(this, tag: NetworkObject);
-	void OnDisable() => EventBus.Unsubscribe(this, tag: NetworkObject);
+	void OnEnable() => EventBus.Subscribe(this, tag: Tag);
+	void OnDisable() => EventBus.Unsubscribe(this, tag: Tag);
 
 	public override void Spawned()
 	{
