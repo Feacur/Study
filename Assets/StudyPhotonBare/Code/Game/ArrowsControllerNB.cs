@@ -40,7 +40,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
 
 	[Header("Accessors")]
-	private NetworkObject NetworkObject => GetComponent<NetworkObject>(); // need this ref before spawn
+	private NetworkObject Tag => GetComponent<NetworkObject>(); // need this ref before spawn
 	private PoolOfGOService PoolOfGO => ServiceLocator.Get<PoolOfGOService>(); // @todo cache on spawn ?
 	// @note an official video tutorial used `HasStateAuthority`, but it's illogical in hindsight;
 	// another one, in text, suggests using `Object.IsProxy` for remote render time.
@@ -51,8 +51,8 @@ public class ArrowsControllerNB : NetworkBehaviour
 	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
 	private int LifeTicks => _lifeSeconds * Runner.TickRate;
 
-	void OnEnable() => EventBus.Subscribe(this, tag: NetworkObject);
-	void OnDisable() => EventBus.Unsubscribe(this, tag: NetworkObject);
+	void OnEnable() => EventBus.Subscribe(this, tag: Tag);
+	void OnDisable() => EventBus.Unsubscribe(this, tag: Tag);
 
 	void IEBSShooter.Shoot(Vector3 position, Vector3 direction)
 	{
@@ -111,6 +111,9 @@ public class ArrowsControllerNB : NetworkBehaviour
 					: null;
 				if (entity && entity != damageSource)
 				{
+					// @note to broadcast the damage fact, it should be done separately, because
+					// tagged events are designed for interactions with known entities or sets.
+					// otherwise all non-targets would require manual checks 
 					EventBus.Raise<IEBSDamageable>(it => { it.TakeDamage(_damage); }, tag: entity);
 					hitSomething = true;
 				}
