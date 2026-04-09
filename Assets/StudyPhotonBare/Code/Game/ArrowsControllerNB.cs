@@ -5,6 +5,7 @@ using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
 using UnityEngine;
+using PlayerID = System.Int32;
 
 
 namespace StudyPhotonBare.Game
@@ -13,6 +14,9 @@ namespace StudyPhotonBare.Game
 [RequireComponent(typeof(NetworkObject))]
 public class ArrowsControllerNB : NetworkBehaviour
 	, IEBSShooter
+	, IEBSPickupListener
+	, IEBSPlayerIDListener
+	, IEBSNetworkMigrationListener
 {
 	// @note technically this can be a shared managing object,
 	// but then in shared topology we either need to chunk the
@@ -21,23 +25,23 @@ public class ArrowsControllerNB : NetworkBehaviour
 	// of complete p2p and host/client variant. shady
 
 	[Header("Logics")] // @todo CMS
-	[SerializeField] int _lifeSeconds = 1;
+	[SerializeField] float _lifeSeconds = 0.5f;
 	[SerializeField] float _speed = 20;
 	[SerializeField] ContactFilter2D _contactFilter;
 	[SerializeField] int _damage = 1;
 
 	[Header("Visuals")]
-	[SerializeField] GameObject _prefab;
+	[SerializeField] GameObject _prefab; // @todo CMS
 
 	[Header("Networked")]
 	[Networked] int NWArrowsCooldown { get; set; }
-	[Networked] int NWArrowsWrite { get; set; }
 	[Networked, Capacity(4), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
 
 	[Header("Private")]
-	private readonly HashSet<int> _activeIDs = new HashSet<int>();
-	private readonly List<Instance> _instances = new List<Instance>();
-	private readonly List<RaycastHit2D> _hits = new List<RaycastHit2D>();
+	private PlayerID _playerID { get; set; }
+	private readonly HashSet<int> _activeIDs = new();
+	private readonly List<Instance> _instances = new();
+	private readonly List<RaycastHit2D> _hits = new();
 
 	[Header("Accessors")]
 	private NetworkObject Tag => GetComponent<NetworkObject>(); // need this ref before spawn
@@ -46,10 +50,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 	// another one, in text, suggests using `Object.IsProxy` for remote render time.
 	// `HasInputAuthority` might be a good fit too, as per my experiments;
 	// besides, "proxy" loosely means "~input & ~state"
-	private float Time => Object.IsProxy ? Runner.RemoteRenderTime : Runner.LocalRenderTime;
-	private float GetElapsed(in NSArrow arrow, float time) => time - arrow.InitTick * Runner.DeltaTime;
-	private bool IsVisible(in NSArrow arrow, float time) => arrow.IsAlive && (GetElapsed(in arrow, time) >= 0);
-	private int LifeTicks => _lifeSeconds * Runner.TickRate;
+	private int LifeTicks => (int)(_lifeSeconds * Runner.TickRate);
 
 	void OnEnable() => EventBus.Subscribe(this, tag: Tag);
 	void OnDisable() => EventBus.Unsubscribe(this, tag: Tag);
@@ -64,7 +65,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 	{
 		var poolOfGO = PoolOfGO;
 		Action<GameObject> Clear = poolOfGO != null
-			? poolOfGO.Ret
+			? poolOfGO.Release
 			: Destroy;
 		foreach (var it in _instances)
 			Clear(it.GO);
@@ -84,12 +85,12 @@ public class ArrowsControllerNB : NetworkBehaviour
 			var elapsed = Runner.Tick - arrow.InitTick;
 			if (elapsed < 1) continue;
 
-			GetPositionTicks(in arrow, elapsed - 1, out var positionCurr, out var _);
-			GetPositionTicks(in arrow, elapsed,     out var positionNext, out var _);
-			var direction = positionNext - positionCurr;
+			GetPositionTicks(in arrow, elapsed - 1, out var positionPrev, out var _);
+			GetPositionTicks(in arrow, elapsed,     out var positionCurr, out var _);
+			var direction = positionCurr - positionPrev;
 
 			var hitSomething = false;
-			var hitsCount = scene.Raycast(positionCurr, direction, direction.magnitude, _contactFilter, _hits);
+			var hitsCount = scene.Raycast(positionPrev, direction, direction.magnitude, _contactFilter, _hits);
 			for (int hitIndex = 0; hitIndex < hitsCount; hitIndex++)
 			{
 				var hit = _hits[hitIndex];
@@ -107,63 +108,89 @@ public class ArrowsControllerNB : NetworkBehaviour
 			}
 
 			if (hitSomething || elapsed > LifeTicks)
-				NWArrows.Set(i, default);
+			{
+				EventBus.Raise<IEBSDropListener>(it => it.OnDropped(_playerID, positionCurr));
+				arrow.IsAlive = false; NWArrows.Set(i, arrow);
+			}
 		}
 	}
 
 	public override void Render()
 	{
-		var time = Time;
+		var time = Object.IsProxy ? Runner.RemoteRenderTime : Runner.LocalRenderTime;
 		for (int i = 0; i < _instances.Count; i++)
 		{
 			var inst = _instances[i];
 			var arrow = NWArrows[inst.ID];
-			if (!arrow.IsAlive) continue; // @note ok, this can be avoided with a dedicated `IsAlive` field
-			var elapsed = GetElapsed(in arrow, time);
+			var elapsed =  time - arrow.InitTick * Runner.DeltaTime;
 			GetPositionTime(in arrow, elapsed, out var position, out var rotation);
 			inst.GO.transform.SetPositionAndRotation(position, rotation);
 		}
 	}
 
-	void IEBSShooter.Shoot(Vector3 position, Vector3 direction)
+	void IEBSShooter.Shoot(Vector2 position, Vector2 direction)
 	{
+		// @note valid available arrows have time zeroed out
+		// "alive" flag symbolizes only active lifetime
+		var index = NWArrows.FindLastIndex(it => it.InitTick == 0);
+		if (index < 0) return;
+
 		if (NWArrowsCooldown > Runner.Tick) return;
 		NWArrowsCooldown = Runner.Tick + Mathf.Max(1, LifeTicks / NWArrows.Length);
 
-		NWArrows.Set(NWArrowsWrite, new NSArrow {
+		NWArrows.Set(index, new NSArrow {
+			IsAlive = true,
 			InitTick = Runner.Tick,
 			InitPosition = position,
 			InitDirection = direction,
 		});
-		NWArrowsWrite = (NWArrowsWrite + 1) % NWArrows.Length;
 	}
 
-	private void GetPositionTicks(in NSArrow arrow, int elapsed, out Vector3 position, out Quaternion rotation)
+	void IEBSPickupListener.OnPickup(PlayerID playerID, int id)
+	{
+		var index = NWArrows.FindLastIndex(it => it.InitTick > 0 && !it.IsAlive);
+		if (index <= 0) return;
+		EventBus.Raise<IEBSPickupListener>(it => { it.OnPickup(_playerID, id); });
+		NWArrows.Set(index, default);
+	}
+
+	void IEBSPlayerIDListener.OnPlayerID(PlayerID playerID)
+	{
+		EventBus.Unsubscribe<IEBSPlayerIDListener>(this, tag: Tag);
+		_playerID = playerID;
+	}
+
+	void IEBSNetworkMigrationListener.OnHostMigrated()
+	{
+		// @note this object is already initialized, remove subs
+		EventBus.Unsubscribe<IEBSNetworkMigrationListener>(this, tag: Tag);
+		EventBus.Unsubscribe<IEBSPlayerIDListener>(this, tag: Tag);
+	}
+
+	private void GetPositionTicks(in NSArrow arrow, int elapsed, out Vector2 position, out Quaternion rotation)
 	{
 		var time = elapsed * Runner.DeltaTime;
 		GetPositionTime(arrow, time, out position, out rotation);
 	}
 
-	private void GetPositionTime(in NSArrow arrow, float elapsed, out Vector3 position, out Quaternion rotation)
+	private void GetPositionTime(in NSArrow arrow, float elapsed, out Vector2 position, out Quaternion rotation)
 	{
-		position = arrow.InitPosition + (Vector3)arrow.InitDirection * (_speed * elapsed);
-		rotation = Quaternion.FromToRotation(Vector3.right, arrow.InitDirection);
+		position = arrow.InitPosition + (Vector2)arrow.InitDirection * (_speed * elapsed);
+		rotation = Quaternion.FromToRotation(Vector2.right, (Vector2)arrow.InitDirection);
 	}
 
 	private void NWArrowsCR()
 	{
-		var time = Time;
-
 		for (int i = _instances.Count - 1; i >= 0; i--)
 		{
-			var inst = _instances[i];
-			if (_activeIDs.Contains(inst.ID))
+			var instance = _instances[i];
+			if (_activeIDs.Contains(instance.ID))
 			{
-				var arrow = NWArrows[inst.ID];
-				if (!IsVisible(in arrow, time))
+				var arrow = NWArrows[instance.ID];
+				if (!arrow.IsAlive)
 				{
-					PoolOfGO.Ret(inst.GO);
-					_activeIDs.Remove(inst.ID);
+					PoolOfGO.Release(instance.GO);
+					_activeIDs.Remove(instance.ID);
 					_instances.RemoveAt(i);
 				}
 			}
@@ -174,12 +201,14 @@ public class ArrowsControllerNB : NetworkBehaviour
 			if (!_activeIDs.Contains(id))
 			{
 				var arrow = NWArrows[id];
-				if (IsVisible(in arrow, time))
+				if (arrow.IsAlive)
 				{
+					var instanceGO = PoolOfGO.Fetch(_prefab);
+
 					_activeIDs.Add(id);
 					_instances.Add(new Instance {
 						ID = id,
-						GO = PoolOfGO.Get(_prefab),
+						GO = instanceGO,
 					});
 				}
 			}
@@ -189,10 +218,9 @@ public class ArrowsControllerNB : NetworkBehaviour
 	private struct NSArrow : INetworkStruct
 	{
 		public int InitTick;
-		public Vector3Compressed InitPosition;
-		public Vector3Compressed InitDirection;
-
-		public bool IsAlive => InitTick > 0;
+		public NetworkBool IsAlive;
+		public Vector2Compressed InitPosition;
+		public Vector2Compressed InitDirection;
 	}
 
 	private struct Instance

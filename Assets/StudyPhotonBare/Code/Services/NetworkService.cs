@@ -6,6 +6,8 @@ using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Tools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UObject = UnityEngine.Object;
+using PlayerID = System.Int32;
 
 
 namespace StudyPhotonBare.Services
@@ -15,10 +17,11 @@ public sealed class NetworkService : IService
 	, IEBSNetworkToggler
 {
 	[Header("Private")]
-	private readonly byte[] Token = System.Guid.NewGuid().ToByteArray();
+	private readonly byte[] LocalPlayerToken = System.Guid.NewGuid().ToByteArray();
 	private NetworkRunner _networkRunner;
 
 	[Header("Accessors")]
+	private PlayerID LocalPlayerID => Utils.GetPlayerID(LocalPlayerToken);
 	private ResourcesService ResourcesService => ServiceLocator.Get<ResourcesService>();
 	private bool IsOff => !_networkRunner || _networkRunner.State == NetworkRunner.States.Shutdown;
 
@@ -42,17 +45,22 @@ public sealed class NetworkService : IService
 			{
 				EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(NetworkStatus.Starting));
 				var instance = CreateRunner();
-				_ = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
+				_ = UObject.Instantiate(ResourcesService.AvatarManagerNBPrefab);
 
-				EventBus.Raise<IEBSNetworkTokenListener>(it => it.OnNetworkToken(Token));
+				EventBus.Raise<IEBSPlayerIDListener>(it => it.OnPlayerID(LocalPlayerID));
 				var result = await instance.StartGame(new StartGameArgs {
-					GameMode = GameMode.AutoHostOrClient, ConnectionToken = Token,
+					GameMode = GameMode.AutoHostOrClient, ConnectionToken = LocalPlayerToken,
 					SceneManager = instance.GetComponent<INetworkSceneManager>(),
 					Scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex),
 					OnGameStarted = runner => { _networkRunner = runner; },
 				});
 
 				if (result.Ok) await NetworkFinalize(ct);
+
+				// @todo move to game systems
+				// @note should be spawned once at start and replicated
+				if (Utils.CanActWithAuthority(_networkRunner))
+					_networkRunner.Spawn(ResourcesService.PickupManagerNBPrefab);
 
 				var status = IsOff ? NetworkStatus.None : NetworkStatus.Running;
 				EventBus.Raise<IEBSNetworkStatusListener>(it => it.OnNetworkStatus(status));
@@ -73,11 +81,11 @@ public sealed class NetworkService : IService
 			await prevRunner.Shutdown(shutdownReason: ShutdownReason.HostMigration);
 
 			var instance = CreateRunner();
-			var manager = Object.Instantiate(ResourcesService.AvatarManagerNBPrefab);
+			_ = UObject.Instantiate(ResourcesService.AvatarManagerNBPrefab);
 
-			EventBus.Raise<IEBSNetworkTokenListener>(it => it.OnNetworkToken(Token));
+			EventBus.Raise<IEBSPlayerIDListener>(it => it.OnPlayerID(LocalPlayerID));
 			var result = await instance.StartGame(new StartGameArgs {
-				HostMigrationToken = hostMigrationToken, ConnectionToken = Token,
+				HostMigrationToken = hostMigrationToken, ConnectionToken = LocalPlayerToken,
 				SceneManager = instance.GetComponent<INetworkSceneManager>(),
 				Scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex),
 				OnGameStarted = runner => { _networkRunner = runner; },
@@ -97,7 +105,7 @@ public sealed class NetworkService : IService
 
 	private NetworkRunner CreateRunner()
 	{
-		var instance = Object.Instantiate(ResourcesService.NetworkRunnerPrefab);
+		var instance = UObject.Instantiate(ResourcesService.NetworkRunnerPrefab);
 		instance.ProvideInput = true;
 		
 		if (instance.gameObject.GetComponent<INetworkRunnerCallbacks>() == null)

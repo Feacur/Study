@@ -5,7 +5,7 @@ namespace StudyPhotonBare.Interfaces
 
 public interface IEBSShooter : IEventBusSubscriber
 {
-	void Shoot(Vector3 position, Vector3 direction);
+	void Shoot(Vector2 position, Vector2 direction);
 }
 
 }

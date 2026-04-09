@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Components;
 using UnityEngine;
-using UnityEngine.Assertions;
-using ID = System.Int32; // should be the same type as `Object.GetInstanceID()`
-using Object = UnityEngine.Object;
+using UObject = UnityEngine.Object;
+using ID = System.Int32; // @note should be the same type as `Object.GetInstanceID()`
+using DevAssert = UnityEngine.Assertions.Assert;
+using POQueue = System.Collections.Generic.Queue<StudyPhotonBare.Components.PoolObject>;
 
 
 namespace StudyPhotonBare.Services
@@ -16,16 +17,16 @@ public sealed class PoolOfGOService : IService
 	, IDisposable
 {
 	private GameObject _root;
-	private readonly Dictionary<ID, Queue<PooledGameObject>> _instances = new Dictionary<ID, Queue<PooledGameObject>>();
+	private readonly Dictionary<ID, POQueue> _instances = new();
 
 	public PoolOfGOService() => EventBus.Subscribe(this);
 
 	void IEBSInitializeable.Initialize()
 	{
-		EventBus.Unsubscribe<IEBSInitializeable>(this); // unsubscribe only for the initialization inteface
+		EventBus.Unsubscribe<IEBSInitializeable>(this);
 		_root = new GameObject($"{nameof(PoolOfGOService)} root");
 		_root.SetActive(false);
-		Object.DontDestroyOnLoad(_root);
+		UObject.DontDestroyOnLoad(_root);
 	}
 
 	void IDisposable.Dispose()
@@ -33,78 +34,85 @@ public sealed class PoolOfGOService : IService
 		foreach (var (_, queue) in _instances)
 			queue.Clear();
 		_instances.Clear();
-		Object.Destroy(_root);
+		UObject.Destroy(_root);
 	}
 
 	public void Warmup(GameObject prefab, int count)
 	{
-		var pooled = prefab.GetComponent<PooledGameObject>();
-		if (pooled)
+		var pooled = prefab.GetComponent<PoolObject>();
+		DevAssert.IsNotNull(pooled);
+		var queue = GetQueue(pooled);
+		while (queue.Count < count)
 		{
-			var queue = GetQueue(pooled);
-			while (queue.Count < count)
-			{
-				var instance = pooled.Instantiate(parameters: new InstantiateParameters {
-					parent = _root.transform,
-				});
-				queue.Enqueue(instance);
-			}
+			var instance = pooled.Instantiate(parameters: new InstantiateParameters {
+				parent = _root.transform,
+			});
+			queue.Enqueue(instance);
 		}
-		else Assert.IsTrue(false); // dev
 	}
 
-	public GameObject Get(GameObject prefab, Transform parent = null)
+	public GameObject Fetch(GameObject prefab, Transform parent = null)
 	{
-		var pooled = prefab.GetComponent<PooledGameObject>();
+		var pooled = prefab.GetComponent<PoolObject>();
+		DevAssert.IsNotNull(pooled);
 		if (pooled)
 		{
-			PooledGameObject ret;
+			var ret = FetchInternal();
+			return ret;
+		}
+		else
+		{ // fallback
+			var ret = UObject.Instantiate(prefab, parameters: new InstantiateParameters {
+				parent = parent,
+			});
+			return ret;
+		}
+
+		GameObject FetchInternal()
+		{
 			var queue = GetQueue(pooled);
 			if (queue.Count > 0)
 			{
-				ret = queue.Dequeue();
-				ret.transform.SetParent(parent);
+				var ret = queue.Dequeue();
+				ret.transform.SetParent(parent, worldPositionStays: false);
+				return ret.gameObject;
 			}
-			else ret = pooled.Instantiate(parameters: new InstantiateParameters {
-				parent = parent,
-				scene = parent
-					? parent.gameObject.scene
-					: _root.scene,
-			});
-			return ret.gameObject;
-		}
-		else
-		{
-			Assert.IsTrue(false); // dev
-			return Object.Instantiate(prefab, parameters: new InstantiateParameters {
-				parent = parent,
-			});
+			else
+			{
+				var ret = pooled.Instantiate(parameters: new InstantiateParameters {
+					parent = parent,
+					scene = parent
+						? parent.gameObject.scene
+						: _root.scene,
+				});
+				return ret.gameObject;
+			}
 		}
 	}
 
-	public void Ret(GameObject instance)
+	public void Release(GameObject instance)
 	{
-		var pooled = instance.GetComponent<PooledGameObject>();
+		var pooled = instance.GetComponent<PoolObject>();
+		DevAssert.IsNotNull(pooled);
 		if (pooled)
 		{
 			var queue = GetQueue(pooled);
-			instance.transform.SetParent(_root.transform);
+			instance.transform.SetParent(_root.transform, worldPositionStays: false);
 			queue.Enqueue(pooled);
 		}
 		else
-		{
-			Assert.IsTrue(false); // dev
-			Object.Destroy(instance);
+		{ // fallback
+			UObject.Destroy(instance);
 		}
 	}
 
-	private Queue<PooledGameObject> GetQueue(PooledGameObject pooled)
+	private POQueue GetQueue(PoolObject pooled)
 	{
 		var prefab = pooled.Prefab;
 		var id = prefab.GetInstanceID();
 
 		if (!_instances.TryGetValue(id, out var queue))
-			_instances.Add(id, queue = new Queue<PooledGameObject>());
+			_instances.Add(id, queue = new POQueue());
 
 		return queue;
 	}

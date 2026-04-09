@@ -13,7 +13,7 @@ public static class ServiceLocator
 	// - getting a value of a static field with name "ServiceType" is a possibility
 	// - no chance using static interface properties with the current C# version
 	// - just fetch interfaces like with the `EventBus` ?
-	private static readonly Dictionary<Type, IService> _instances = new Dictionary<Type, IService>();
+	private static readonly Dictionary<Type, IService> _instances = new();
 
 	public static void Reset()
 	{

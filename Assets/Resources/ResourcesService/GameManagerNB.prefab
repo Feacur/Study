@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2756234549813662249}
   - component: {fileID: -3948096121077220289}
   m_Layer: 0
-  m_Name: AvatarsManagerNB
+  m_Name: GameManagerNB
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 287851748
   ObjectInterest: 1
-  Flags: 262145
+  Flags: 327681
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: -3948096121077220289}

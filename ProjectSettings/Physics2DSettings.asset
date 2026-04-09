@@ -42,7 +42,7 @@ Physics2DSettings:
   m_SimulationMode: 0
   m_SimulationLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1
   m_MaxSubStepCount: 4
   m_MinSubStepFPS: 30
   m_UseSubStepping: 0
@@ -50,7 +50,7 @@ Physics2DSettings:
   m_QueriesHitTriggers: 1
   m_QueriesStartInColliders: 1
   m_CallbacksOnDisable: 1
-  m_ReuseCollisionCallbacks: 0
+  m_ReuseCollisionCallbacks: 1
   m_AutoSyncTransforms: 0
   m_GizmoOptions: 10
   m_LayerCollisionMatrix: 0100000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

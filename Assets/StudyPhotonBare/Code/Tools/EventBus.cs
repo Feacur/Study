@@ -10,7 +10,7 @@ public static class EventBus
 {
 	private static readonly Tag NilTagForBroadcasting = new();
 	private static readonly Interface BasicInterface = typeof(IEventBusSubscriber);
-	private static readonly Dictionary<Tag, Storage> tags = new Dictionary<Tag, Storage>();
+	private static readonly Dictionary<Tag, Storage> tags = new();
 
 	public static void Reset()
 	{
@@ -60,7 +60,7 @@ public static class EventBus
 	private class Storage
 	{
 		// @todo maybe pool collections
-		private readonly Dictionary<Interface, Subscribers> _instances = new Dictionary<Interface, Subscribers>();
+		private readonly Dictionary<Interface, Subscribers> _instances = new();
 
 		public int Count => _instances.Count;
 

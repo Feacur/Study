@@ -9,6 +9,8 @@ public class GameCursor : MonoBehaviour
 {
 	public static GameCursor Instance { get; private set; }
 
+	public Vector2 Position => transform.position;
+
 	[Header("Visuals")]
 	[SerializeField] SpriteRenderer _visuals;
 
@@ -28,13 +30,13 @@ public class GameCursor : MonoBehaviour
 			Instance = null;
 	}
 
-	void Update()
+	void LateUpdate()
 	{
 		var mouse = Mouse.current;
 
-		var screenPosition = mouse.position.ReadValue(); var z = -CameraRig.Camera.transform.position.z;
+		var screenPosition = mouse.position.ReadValue(); var z = CameraRig.ZOffset;
 		var worldPosition = CameraRig.Camera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y, z));
-		transform.position = new Vector3(worldPosition.x, worldPosition.y);
+		transform.position = worldPosition;
 
 		var leftButtonPressed = mouse.leftButton.IsPressed();
 		_visuals.transform.localScale = leftButtonPressed
