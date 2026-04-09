@@ -54,19 +54,6 @@ public class ArrowsControllerNB : NetworkBehaviour
 	void OnEnable() => EventBus.Subscribe(this, tag: Tag);
 	void OnDisable() => EventBus.Unsubscribe(this, tag: Tag);
 
-	void IEBSShooter.Shoot(Vector3 position, Vector3 direction)
-	{
-		if (NWArrowsCooldown > Runner.Tick) return;
-		NWArrowsCooldown = Runner.Tick + Mathf.Max(1, LifeTicks / NWArrows.Length);
-
-		NWArrows.Set(NWArrowsWrite, new NSArrow {
-			InitTick = Runner.Tick,
-			InitPosition = position,
-			InitDirection = direction,
-		});
-		NWArrowsWrite = (NWArrowsWrite + 1) % NWArrows.Length;
-	}
-
 	public override void Spawned()
 	{
 		var count = NWArrows.Length * Runner.SessionInfo.PlayerCount;
@@ -136,6 +123,19 @@ public class ArrowsControllerNB : NetworkBehaviour
 			GetPositionTime(in arrow, elapsed, out var position, out var rotation);
 			inst.GO.transform.SetPositionAndRotation(position, rotation);
 		}
+	}
+
+	void IEBSShooter.Shoot(Vector3 position, Vector3 direction)
+	{
+		if (NWArrowsCooldown > Runner.Tick) return;
+		NWArrowsCooldown = Runner.Tick + Mathf.Max(1, LifeTicks / NWArrows.Length);
+
+		NWArrows.Set(NWArrowsWrite, new NSArrow {
+			InitTick = Runner.Tick,
+			InitPosition = position,
+			InitDirection = direction,
+		});
+		NWArrowsWrite = (NWArrowsWrite + 1) % NWArrows.Length;
 	}
 
 	private void GetPositionTicks(in NSArrow arrow, int elapsed, out Vector3 position, out Quaternion rotation)
