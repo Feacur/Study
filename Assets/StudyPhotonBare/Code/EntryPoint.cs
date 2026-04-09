@@ -1,7 +1,6 @@
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 
 using StudyPhotonBare.Interfaces;
-using StudyPhotonBare.Pooling;
 using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
 using UnityEngine;
