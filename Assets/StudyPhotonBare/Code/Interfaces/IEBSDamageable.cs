@@ -3,7 +3,7 @@ namespace StudyPhotonBare.Interfaces
 
 public interface IEBSDamageable : IEventBusSubscriber
 {
-	void TakeDamage();
+	void TakeDamage(int damage);
 }
 
 }
