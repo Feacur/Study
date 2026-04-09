@@ -10,8 +10,8 @@ namespace StudyPhotonBare.Components
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkTransform))]
 public class ComponentHitpointsNB : NetworkBehaviour
-	, IEBSResetable
 	, IEBSDamageable
+	, IEBSResetable
 {
 	[Header("Logics")] // @todo CMS
 	[SerializeField] int _max = 3;
@@ -41,8 +41,7 @@ public class ComponentHitpointsNB : NetworkBehaviour
 	void IEBSDamageable.TakeDamage(int damage)
 	{
 		NWHitpoints -= damage;
-		if (NWHitpoints <= 0)
-			EventBus.Raise<IEBSRespawnable>(it => { it.Respawn(); }, tag: Object);
+		EventBus.Raise<IEBSHitpointsListener>(it => { it.OnHitpointsChanged(NWHitpoints); }, tag: Object);
 	}
 
 	private void NWHitpointsCR() => 

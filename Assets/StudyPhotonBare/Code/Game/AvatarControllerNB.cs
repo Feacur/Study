@@ -10,9 +10,7 @@ namespace StudyPhotonBare.Game
 {
 
 [RequireComponent(typeof(NetworkObject))]
-[RequireComponent(typeof(NetworkTransform))]
 public class AvatarControllerNB : NetworkBehaviour
-	, IEBSRespawnable
 	, IBeforeUpdate
 {
 	[Header("Logics")] // @todo CMS
@@ -27,25 +25,15 @@ public class AvatarControllerNB : NetworkBehaviour
 	[Networked] Vector2 NWAim { get; set; }
 
 	[Header("Private")]
-	private NetworkTransform _networkTransform;
 	private bool _inputIsConsumed;
 	private InputData _inputAccumulated;
 	private Vector3 _cameraSmoothDamp;
 
 	[Header("Accessors")]
-	private NetworkObject Tag => GetComponent<NetworkObject>(); // need this ref before spawn
 	private ConnectionMenu ConnectionMenu => ConnectionMenu.Instance;
 	private bool AreControlsEnabled => HasInputAuthority && !ConnectionMenu.IsMenuVisible;
 	private GameCameraRig CameraRig => GameCameraRig.Instance;
 	private GameCursor Cursor => GameCursor.Instance;
-
-	void Awake()
-	{
-		_networkTransform = GetComponent<NetworkTransform>();
-	}
-
-	void OnEnable() => EventBus.Subscribe(this, tag: Tag);
-	void OnDisable() => EventBus.Unsubscribe(this, tag: Tag);
 
 	public override void Spawned()
 	{
@@ -106,14 +94,6 @@ public class AvatarControllerNB : NetworkBehaviour
 			var targetPosition = transform.position + Utils.Translate2D(centerOffset * _cameraOffset);
 			CameraRig.transform.position = Vector3.SmoothDamp(CameraRig.transform.position, targetPosition, ref _cameraSmoothDamp, Time.unscaledDeltaTime);
 		}
-	}
-
-	void IEBSRespawnable.Respawn()
-	{
-		EventBus.Raise<IEBSResetable>(it => { it.Reset(); }, tag: Object);
-		_networkTransform.Teleport(Utils.Translate2D(
-			Random.insideUnitCircle * 2
-		));
 	}
 
 	void IBeforeUpdate.BeforeUpdate()
