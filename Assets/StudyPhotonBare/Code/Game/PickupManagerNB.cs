@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using StudyPhotonBare.Components;
 using StudyPhotonBare.Interfaces;
+using StudyPhotonBare.Root;
 using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
 using UnityEngine;
@@ -14,9 +15,10 @@ namespace StudyPhotonBare.Game
 
 [RequireComponent(typeof(NetworkObject))]
 public class PickupManagerNB : NetworkBehaviour
-	, IEBSPlayerLeftListener
 	, IEBSDropListener
 	, IEBSPickupListener
+	, IEBSPlayerLeftListener
+	, IEBSNetworkMigrationListener
 {
 	[Header("Logics")] // @todo CMS
 	[SerializeField] ContactFilter2D _contactFilter;
@@ -25,10 +27,10 @@ public class PickupManagerNB : NetworkBehaviour
 	[SerializeField] GameObject _prefab; // @todo CMS
 
 	[Header("Networked")]
-	[Networked, Capacity(64), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
+	[Networked, Capacity(Constants.ArrowsLimit), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
 
 	[Header("Private")]
-	private readonly HashSet<int> _activeIDs = new();
+	private readonly HashSet<int> _activeIDXs = new();
 	private readonly List<Instance> _instances = new();
 
 	[Header("Accessors")]
@@ -55,19 +57,9 @@ public class PickupManagerNB : NetworkBehaviour
 		_instances.Clear();
 	}
 
-	void IEBSPlayerLeftListener.OnPlayerLeft(PlayerID playerID)
-	{
-		for (int id = 0; id < NWArrows.Length; id++)
-		{
-			var arrow = NWArrows[id];
-			if (arrow.PlayerID == playerID)
-				NWArrows.Set(id, default);
-		}
-	}
-
 	void IEBSDropListener.OnDropped(PlayerID playerID, Vector2 position)
 	{
-		var index = NWArrows.FindFirstIndex(it => !it.IsAlive);
+		var index = NWArrows.FindFirstIndex(it => it.IsDroppable);
 		if (index < 0) return;
 
 		NWArrows.Set(index, new NSArrow {
@@ -93,42 +85,58 @@ public class PickupManagerNB : NetworkBehaviour
 		NWArrows.Set(id - 1, default);
 	}
 
+	void IEBSPlayerLeftListener.OnPlayerLeft(PlayerID playerID)
+	{
+		for (int idx = 0; idx < NWArrows.Length; idx++)
+		{
+			var arrow = NWArrows[idx];
+			if (arrow.PlayerID == playerID)
+				NWArrows.Set(idx, default);
+		}
+	}
+
+	void IEBSNetworkMigrationListener.OnHostMigrated()
+	{
+		for (int idx = 0; idx < NWArrows.Length; idx++)
+			NWArrows.Set(idx, default);
+	}
+
 	private void NWArrowsCR()
 	{
 		for (int i = _instances.Count - 1; i >= 0; i--)
 		{
 			var instance = _instances[i];
-			if (_activeIDs.Contains(instance.ID))
+			if (_activeIDXs.Contains(instance.ID))
 			{
 				var arrow = NWArrows[instance.ID];
 				if (!arrow.IsAlive)
 				{
 					var pickupObject = instance.GO.GetComponentInChildren<PickupObject>();
 					pickupObject.PlayerID = 0;
-					pickupObject.Id = 0;
+					pickupObject.ID = 0;
 
 					PoolOfGO.Release(instance.GO);
-					_activeIDs.Remove(instance.ID);
+					_activeIDXs.Remove(instance.ID);
 					_instances.RemoveAt(i);
 				}
 			}
 		}
 
-		for (int id = 0; id < NWArrows.Length; id++)
+		for (int idx = 0; idx < NWArrows.Length; idx++)
 		{
-			if (!_activeIDs.Contains(id))
+			if (!_activeIDXs.Contains(idx))
 			{
-				var arrow = NWArrows[id];
+				var arrow = NWArrows[idx];
 				if (arrow.IsAlive)
 				{
 					var instanceGO = PoolOfGO.Fetch(_prefab, parent: transform);
 					var pickupObject = instanceGO.GetComponentInChildren<PickupObject>();
 					pickupObject.PlayerID = arrow.PlayerID;
-					pickupObject.Id = id + 1;
+					pickupObject.ID = idx + 1;
 
-					_activeIDs.Add(id);
+					_activeIDXs.Add(idx);
 					_instances.Add(new Instance {
-						ID = id,
+						ID = idx,
 						GO = instanceGO,
 					});
 
@@ -143,6 +151,8 @@ public class PickupManagerNB : NetworkBehaviour
 		public PlayerID PlayerID;
 		public NetworkBool IsAlive;
 		public Vector2Compressed InitPosition;
+
+		public bool IsDroppable => !IsAlive;
 	}
 
 	private struct Instance

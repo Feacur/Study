@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3186287511102640859}
   - component: {fileID: 4091882800549005051}
-  - component: {fileID: 3550656790569449778}
   m_Layer: 0
   m_Name: Collider
   m_TagString: Untagged
@@ -70,19 +69,6 @@ CapsuleCollider2D:
   m_Offset: {x: 0, y: 0}
   m_Size: {x: 1, y: 0.1}
   m_Direction: 1
---- !u!114 &3550656790569449778
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 867373724690859069}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b44bd9ad006f26947ade51d5ce0f4cb9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: StudyPhotonBare::StudyPhotonBare.Components.PickupObject
-  _collider: {fileID: 0}
 --- !u!1 &4384065306642962102
 GameObject:
   m_ObjectHideFlags: 0
@@ -185,7 +171,7 @@ GameObject:
   - component: {fileID: 4958895453189377623}
   - component: {fileID: -703226070717016716}
   m_Layer: 0
-  m_Name: Arrow
+  m_Name: ArrowShootable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
