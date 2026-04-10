@@ -59,7 +59,6 @@ public class GameManagerNB : NetworkBehaviour
 					{
 						runner.SetPlayerObject(prevObject.InputAuthority, instanceObject);
 						_avatars.Add(prevAvatarNB.PlayerID, (instanceObject.GetComponent<AvatarNB>(), AvatarStatus.Migrated));
-						EventBus.Raise<IEBSNetworkMigrationListener>(it => it.OnHostMigrated(), tag: instanceObject);
 					}
 
 					instanceObject.CopyStateFrom(prevObject);
@@ -69,9 +68,12 @@ public class GameManagerNB : NetworkBehaviour
 						var instNB = (NetworkBehaviour)instanceObject.GetComponent(prevNB.GetType());
 						if (instNB) instNB.CopyStateFrom(prevNB);
 					}
+
+					EventBus.Raise<IEBSNetworkMigrationListener>(it => it.OnHostMigrated(), tag: instanceObject);
 				}
 			);
 		}
+		EventBus.Raise<IEBSNetworkMigrationListener>(it => it.OnHostMigrated());
 	}
 
 	void IPlayerJoined.PlayerJoined(PlayerRef player)

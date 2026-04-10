@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fusion;
 using StudyPhotonBare.Interfaces;
+using StudyPhotonBare.Root;
 using StudyPhotonBare.Services;
 using StudyPhotonBare.Tools;
 using UnityEngine;
@@ -35,11 +36,11 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	[Header("Networked")]
 	[Networked] int NWArrowsCooldown { get; set; }
-	[Networked, Capacity(4), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
+	[Networked, Capacity(Constants.ArrowsPerAvatar), OnChangedRender(nameof(NWArrowsCR))] NetworkArray<NSArrow> NWArrows { get; }
 
 	[Header("Private")]
 	private PlayerID _playerID { get; set; }
-	private readonly HashSet<int> _activeIDs = new();
+	private readonly HashSet<int> _activeIDXs = new();
 	private readonly List<Instance> _instances = new();
 	private readonly List<RaycastHit2D> _hits = new();
 
@@ -77,9 +78,9 @@ public class ArrowsControllerNB : NetworkBehaviour
 		// @todo compact alive set or have read-write pointers
 		var damageSource = Object;
 		var scene = Runner.GetPhysicsScene2D();
-		for (int i = 0; i < NWArrows.Length; i++)
+		for (int idx = 0; idx < NWArrows.Length; idx++)
 		{
-			var arrow = NWArrows[i];
+			var arrow = NWArrows[idx];
 			if (!arrow.IsAlive) continue;
 
 			var elapsed = Runner.Tick - arrow.InitTick;
@@ -110,7 +111,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 			if (hitSomething || elapsed > LifeTicks)
 			{
 				EventBus.Raise<IEBSDropListener>(it => it.OnDropped(_playerID, positionCurr));
-				arrow.IsAlive = false; NWArrows.Set(i, arrow);
+				arrow.IsAlive = false; NWArrows.Set(idx, arrow);
 			}
 		}
 	}
@@ -130,9 +131,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	void IEBSShooter.Shoot(Vector2 position, Vector2 direction)
 	{
-		// @note valid available arrows have time zeroed out
-		// "alive" flag symbolizes only active lifetime
-		var index = NWArrows.FindLastIndex(it => it.InitTick == 0);
+		var index = NWArrows.FindLastIndex(it => it.IsShootable);
 		if (index < 0) return;
 
 		if (NWArrowsCooldown > Runner.Tick) return;
@@ -148,7 +147,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	void IEBSPickupListener.OnPickup(PlayerID playerID, int id)
 	{
-		var index = NWArrows.FindLastIndex(it => it.InitTick > 0 && !it.IsAlive);
+		var index = NWArrows.FindLastIndex(it => it.IsPickable);
 		if (index <= 0) return;
 		EventBus.Raise<IEBSPickupListener>(it => { it.OnPickup(_playerID, id); });
 		NWArrows.Set(index, default);
@@ -165,6 +164,8 @@ public class ArrowsControllerNB : NetworkBehaviour
 		// @note this object is already initialized, remove subs
 		EventBus.Unsubscribe<IEBSNetworkMigrationListener>(this, tag: Tag);
 		EventBus.Unsubscribe<IEBSPlayerIDListener>(this, tag: Tag);
+		for (int idx = 0; idx < NWArrows.Length; idx++)
+			NWArrows.Set(idx, default);
 	}
 
 	private void GetPositionTicks(in NSArrow arrow, int elapsed, out Vector2 position, out Quaternion rotation)
@@ -184,30 +185,30 @@ public class ArrowsControllerNB : NetworkBehaviour
 		for (int i = _instances.Count - 1; i >= 0; i--)
 		{
 			var instance = _instances[i];
-			if (_activeIDs.Contains(instance.ID))
+			if (_activeIDXs.Contains(instance.ID))
 			{
 				var arrow = NWArrows[instance.ID];
 				if (!arrow.IsAlive)
 				{
 					PoolOfGO.Release(instance.GO);
-					_activeIDs.Remove(instance.ID);
+					_activeIDXs.Remove(instance.ID);
 					_instances.RemoveAt(i);
 				}
 			}
 		}
 
-		for (int id = 0; id < NWArrows.Length; id++)
+		for (int idx = 0; idx < NWArrows.Length; idx++)
 		{
-			if (!_activeIDs.Contains(id))
+			if (!_activeIDXs.Contains(idx))
 			{
-				var arrow = NWArrows[id];
+				var arrow = NWArrows[idx];
 				if (arrow.IsAlive)
 				{
 					var instanceGO = PoolOfGO.Fetch(_prefab);
 
-					_activeIDs.Add(id);
+					_activeIDXs.Add(idx);
 					_instances.Add(new Instance {
-						ID = id,
+						ID = idx,
 						GO = instanceGO,
 					});
 				}
@@ -221,6 +222,9 @@ public class ArrowsControllerNB : NetworkBehaviour
 		public NetworkBool IsAlive;
 		public Vector2Compressed InitPosition;
 		public Vector2Compressed InitDirection;
+
+		public bool IsShootable => InitTick == 0;
+		public bool IsPickable => InitTick > 0 && !IsAlive;
 	}
 
 	private struct Instance
