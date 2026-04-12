@@ -19,7 +19,7 @@ public static class EntryPoint
 
 		ServiceLocator.Set(new ResourcesService());
 		ServiceLocator.Set(new NetworkService());
-		ServiceLocator.Set(new PoolOfGOService());
+		ServiceLocator.Set(new PoolGOService());
 
 		// @note some nuances
 		// - should only be called once
