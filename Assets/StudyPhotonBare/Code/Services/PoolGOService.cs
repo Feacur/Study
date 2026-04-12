@@ -6,25 +6,25 @@ using UnityEngine;
 using UObject = UnityEngine.Object;
 using ID = System.Int32; // @note should be the same type as `Object.GetInstanceID()`
 using DevAssert = UnityEngine.Assertions.Assert;
-using POQueue = System.Collections.Generic.Queue<StudyPhotonBare.Components.PoolObject>;
+using POQueue = System.Collections.Generic.Queue<StudyPhotonBare.Components.PoolGO>;
 
 
 namespace StudyPhotonBare.Services
 {
 
-public sealed class PoolOfGOService : IService
+public sealed class PoolGOService : IService
 	, IEBSInitializeable
 	, IDisposable
 {
 	private GameObject _root;
 	private readonly Dictionary<ID, POQueue> _instances = new();
 
-	public PoolOfGOService() => EventBus.Subscribe(this);
+	public PoolGOService() => EventBus.Subscribe(this);
 
 	void IEBSInitializeable.Initialize()
 	{
 		EventBus.Unsubscribe<IEBSInitializeable>(this);
-		_root = new GameObject($"{nameof(PoolOfGOService)} root");
+		_root = new GameObject($"{nameof(PoolGOService)} root");
 		_root.SetActive(false);
 		UObject.DontDestroyOnLoad(_root);
 	}
@@ -39,7 +39,7 @@ public sealed class PoolOfGOService : IService
 
 	public void Warmup(GameObject prefab, int count)
 	{
-		var pooled = prefab.GetComponent<PoolObject>();
+		var pooled = prefab.GetComponent<PoolGO>();
 		DevAssert.IsNotNull(pooled);
 		var queue = GetQueue(pooled);
 		while (queue.Count < count)
@@ -53,7 +53,7 @@ public sealed class PoolOfGOService : IService
 
 	public GameObject Fetch(GameObject prefab, Transform parent = null)
 	{
-		var pooled = prefab.GetComponent<PoolObject>();
+		var pooled = prefab.GetComponent<PoolGO>();
 		DevAssert.IsNotNull(pooled);
 		if (pooled)
 		{
@@ -92,7 +92,7 @@ public sealed class PoolOfGOService : IService
 
 	public void Release(GameObject instance)
 	{
-		var pooled = instance.GetComponent<PoolObject>();
+		var pooled = instance.GetComponent<PoolGO>();
 		DevAssert.IsNotNull(pooled);
 		if (pooled)
 		{
@@ -106,7 +106,7 @@ public sealed class PoolOfGOService : IService
 		}
 	}
 
-	private POQueue GetQueue(PoolObject pooled)
+	private POQueue GetQueue(PoolGO pooled)
 	{
 		var prefab = pooled.Prefab;
 		var id = prefab.GetInstanceID();

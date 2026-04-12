@@ -46,7 +46,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 
 	[Header("Accessors")]
 	private NetworkObject Tag => GetComponent<NetworkObject>(); // need this ref before spawn
-	private PoolOfGOService PoolOfGO => ServiceLocator.Get<PoolOfGOService>(); // @todo cache on spawn ?
+	private PoolGOService PoolOfGO => ServiceLocator.Get<PoolGOService>(); // @todo cache on spawn ?
 	// @note an official video tutorial used `HasStateAuthority`, but it's illogical in hindsight;
 	// another one, in text, suggests using `Object.IsProxy` for remote render time.
 	// `HasInputAuthority` might be a good fit too, as per my experiments;

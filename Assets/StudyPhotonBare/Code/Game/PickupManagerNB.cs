@@ -34,7 +34,7 @@ public class PickupManagerNB : NetworkBehaviour
 	private readonly List<Instance> _instances = new();
 
 	[Header("Accessors")]
-	private PoolOfGOService PoolOfGO => ServiceLocator.Get<PoolOfGOService>(); // @todo cache on spawn ?
+	private PoolGOService PoolOfGO => ServiceLocator.Get<PoolGOService>(); // @todo cache on spawn ?
 
 	void OnEnable() => EventBus.Subscribe(this);
 	void OnDisable() => EventBus.Unsubscribe(this);
