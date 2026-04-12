@@ -19,7 +19,7 @@ public class PickupMarker : MonoBehaviour
 			? collision.attachedRigidbody.GetComponentInParent<NetworkObject>()
 			: null;
 		if (entity)
-			EventBus.Raise<IEBSPickupListener>(it => { it.OnPickup(PlayerID, ID); }, tag: entity);
+			EventBus.Raise<IEBSPickupVerifier>(it => { it.VerifyPickup(PlayerID, ID); }, tag: entity);
 	}
 }
 

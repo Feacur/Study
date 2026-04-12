@@ -21,20 +21,28 @@ public static class EventBus
 
 	public static void Subscribe<T>(T instance, Tag tag = default) where T : IEventBusSubscriber
 	{
-		tag ??= NilTagForBroadcasting;
-		if (!tags.TryGetValue(tag, out var storage))
-			tags.Add(tag, storage = new Storage());
-		storage.Subscribe(instance);
+		Process(instance, NilTagForBroadcasting);
+		if (tag != null) Process(instance, tag);
+		static void Process(T instance, Tag tag)
+		{
+			if (!tags.TryGetValue(tag, out var storage))
+				tags.Add(tag, storage = new Storage());
+			storage.Subscribe(instance);
+		}
 	}
 
 	public static void Unsubscribe<T>(T instance, Tag tag = default) where T : IEventBusSubscriber
 	{
-		tag ??= NilTagForBroadcasting;
-		if (tags.TryGetValue(tag, out var storage))
+		Process(instance, NilTagForBroadcasting);
+		if (tag != null) Process(instance, tag);
+		static void Process(T instance, Tag tag)
 		{
-			storage.Unsubscribe(instance);
-			if (storage.Count == 0)
-				tags.Remove(tag);
+			if (tags.TryGetValue(tag, out var storage))
+			{
+				storage.Unsubscribe(instance);
+				if (storage.Count == 0)
+					tags.Remove(tag);
+			}
 		}
 	}
 

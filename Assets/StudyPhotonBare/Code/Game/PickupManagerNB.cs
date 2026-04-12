@@ -16,7 +16,7 @@ namespace StudyPhotonBare.Game
 [RequireComponent(typeof(NetworkObject))]
 public class PickupManagerNB : NetworkBehaviour
 	, IEBSDropListener
-	, IEBSPickupListener
+	, IEBSPickupProcessor
 	, IEBSPlayerLeftListener
 	, IEBSNetworkMigrationListener
 {
@@ -69,7 +69,7 @@ public class PickupManagerNB : NetworkBehaviour
 		});
 	}
 
-	void IEBSPickupListener.OnPickup(PlayerID playerID, int id)
+	void IEBSPickupProcessor.ProcessPickup(PlayerID playerID, int id)
 	{
 		if (id <= 0) return;
 

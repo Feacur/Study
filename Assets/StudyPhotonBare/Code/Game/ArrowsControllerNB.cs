@@ -15,7 +15,7 @@ namespace StudyPhotonBare.Game
 [RequireComponent(typeof(NetworkObject))]
 public class ArrowsControllerNB : NetworkBehaviour
 	, IEBSShooter
-	, IEBSPickupListener
+	, IEBSPickupVerifier
 	, IEBSPlayerIDListener
 	, IEBSNetworkMigrationListener
 {
@@ -145,11 +145,11 @@ public class ArrowsControllerNB : NetworkBehaviour
 		});
 	}
 
-	void IEBSPickupListener.OnPickup(PlayerID playerID, int id)
+	void IEBSPickupVerifier.VerifyPickup(PlayerID playerID, int id)
 	{
 		var index = NWArrows.FindLastIndex(it => it.IsPickable);
-		if (index <= 0) return;
-		EventBus.Raise<IEBSPickupListener>(it => { it.OnPickup(_playerID, id); });
+		if (index < 0) return;
+		EventBus.Raise<IEBSPickupProcessor>(it => { it.ProcessPickup(_playerID, id); });
 		NWArrows.Set(index, default);
 	}
 
