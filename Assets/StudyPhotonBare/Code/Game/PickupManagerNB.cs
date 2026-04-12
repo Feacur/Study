@@ -111,7 +111,7 @@ public class PickupManagerNB : NetworkBehaviour
 				var arrow = NWArrows[instance.ID];
 				if (!arrow.IsAlive)
 				{
-					var pickupObject = instance.GO.GetComponentInChildren<PickupObject>();
+					var pickupObject = instance.GO.GetComponentInChildren<PickupMarker>();
 					pickupObject.PlayerID = 0;
 					pickupObject.ID = 0;
 
@@ -130,7 +130,7 @@ public class PickupManagerNB : NetworkBehaviour
 				if (arrow.IsAlive)
 				{
 					var instanceGO = PoolOfGO.Fetch(_prefab, parent: transform);
-					var pickupObject = instanceGO.GetComponentInChildren<PickupObject>();
+					var pickupObject = instanceGO.GetComponentInChildren<PickupMarker>();
 					pickupObject.PlayerID = arrow.PlayerID;
 					pickupObject.ID = idx + 1;
 
