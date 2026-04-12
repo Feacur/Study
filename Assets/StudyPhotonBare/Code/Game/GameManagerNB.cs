@@ -68,8 +68,6 @@ public class GameManagerNB : NetworkBehaviour
 						var instNB = (NetworkBehaviour)instanceObject.GetComponent(prevNB.GetType());
 						if (instNB) instNB.CopyStateFrom(prevNB);
 					}
-
-					EventBus.Raise<IEBSNetworkMigrationListener>(it => it.OnHostMigrated(), tag: instanceObject);
 				}
 			);
 		}
