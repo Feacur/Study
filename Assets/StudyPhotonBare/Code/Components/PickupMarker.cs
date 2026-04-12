@@ -7,7 +7,7 @@ using PlayerID = System.Int32;
 namespace StudyPhotonBare.Components
 {
 
-public class PickupObject : MonoBehaviour
+public class PickupMarker : MonoBehaviour
 {
 	public PlayerID PlayerID { get; set; }
 	public int ID { get; set; }
