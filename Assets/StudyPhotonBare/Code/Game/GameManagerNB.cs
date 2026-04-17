@@ -6,6 +6,7 @@ using StudyPhotonBare.Tools;
 using UnityEngine;
 using PlayerID = System.Int32;
 using DevAssert = UnityEngine.Assertions.Assert;
+using Study.Interfaces;
 
 
 namespace StudyPhotonBare.Game

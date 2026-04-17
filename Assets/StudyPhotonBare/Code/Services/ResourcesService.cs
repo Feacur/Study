@@ -1,4 +1,5 @@
 using Fusion;
+using Study.Interfaces;
 using StudyPhotonBare.Game;
 using StudyPhotonBare.Interfaces;
 using UnityEngine;

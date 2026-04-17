@@ -1,4 +1,5 @@
 using Fusion;
+using Study.Interfaces;
 using StudyPhotonBare.Interfaces;
 using UnityEngine;
 using PlayerID = System.Int32;

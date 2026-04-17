@@ -1,3 +1,4 @@
+using Study.Interfaces;
 using PlayerID = System.Int32;
 
 namespace StudyPhotonBare.Interfaces

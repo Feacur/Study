@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Fusion;
+using Study.Services;
+using Study.Tools;
 using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Root;
 using StudyPhotonBare.Services;
@@ -102,7 +104,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 				{
 					// @note to broadcast the damage fact, it should be done separately, because
 					// tagged events are designed for interactions with known entities or sets.
-					// otherwise all non-targets would require manual checks 
+					// otherwise all non-targets would require manual checks
 					EventBus.Raise<IEBSDamageable>(it => { it.TakeDamage(_damage); }, tag: entity);
 					hitSomething = true;
 				}
@@ -204,7 +206,7 @@ public class ArrowsControllerNB : NetworkBehaviour
 				var arrow = NWArrows[idx];
 				if (arrow.IsAlive)
 				{
-					var instanceGO = PoolOfGO.Fetch(_prefab);
+					var instanceGO = PoolOfGO.Acquire(_prefab);
 
 					_activeIDXs.Add(idx);
 					_instances.Add(new Instance {

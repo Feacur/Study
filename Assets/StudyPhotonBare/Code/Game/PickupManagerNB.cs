@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Fusion;
+using Study.Services;
+using Study.Tools;
 using StudyPhotonBare.Components;
 using StudyPhotonBare.Interfaces;
 using StudyPhotonBare.Root;
@@ -129,7 +131,7 @@ public class PickupManagerNB : NetworkBehaviour
 				var arrow = NWArrows[idx];
 				if (arrow.IsAlive)
 				{
-					var instanceGO = PoolOfGO.Fetch(_prefab, parent: transform);
+					var instanceGO = PoolOfGO.Acquire(_prefab, parent: transform);
 					var pickupObject = instanceGO.GetComponentInChildren<PickupMarker>();
 					pickupObject.PlayerID = arrow.PlayerID;
 					pickupObject.ID = idx + 1;

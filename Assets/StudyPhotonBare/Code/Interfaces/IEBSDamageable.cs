@@ -1,3 +1,5 @@
+using Study.Interfaces;
+
 namespace StudyPhotonBare.Interfaces
 {
 

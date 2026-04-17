@@ -1,3 +1,4 @@
+using Study.Interfaces;
 using StudyPhotonBare.Enums;
 
 namespace StudyPhotonBare.Interfaces

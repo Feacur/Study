@@ -3,11 +3,12 @@ using Cysharp.Threading.Tasks;
 using Fusion;
 using StudyPhotonBare.Enums;
 using StudyPhotonBare.Interfaces;
-using StudyPhotonBare.Tools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UObject = UnityEngine.Object;
 using PlayerID = System.Int32;
+using Study.Interfaces;
+using Study.Tools;
 
 
 namespace StudyPhotonBare.Services
@@ -21,7 +22,7 @@ public sealed class NetworkService : IService
 	private NetworkRunner _networkRunner;
 
 	[Header("Accessors")]
-	private PlayerID LocalPlayerID => Utils.GetPlayerID(LocalPlayerToken);
+	private PlayerID LocalPlayerID => Tools.Utils.GetPlayerID(LocalPlayerToken);
 	private ResourcesService ResourcesService => ServiceLocator.Get<ResourcesService>();
 	private bool IsOff => !_networkRunner || _networkRunner.State == NetworkRunner.States.Shutdown;
 
@@ -59,7 +60,7 @@ public sealed class NetworkService : IService
 
 				// @todo move to game systems
 				// @note should be spawned once at start and replicated
-				if (Utils.CanActWithAuthority(_networkRunner))
+				if (Tools.Utils.CanActWithAuthority(_networkRunner))
 					_networkRunner.Spawn(ResourcesService.PickupManagerNBPrefab);
 
 				var status = IsOff ? NetworkStatus.None : NetworkStatus.Running;
@@ -107,10 +108,10 @@ public sealed class NetworkService : IService
 	{
 		var instance = UObject.Instantiate(ResourcesService.NetworkRunnerPrefab);
 		instance.ProvideInput = true;
-		
+
 		if (instance.gameObject.GetComponent<INetworkRunnerCallbacks>() == null)
 			instance.gameObject.AddComponent<NetworkEvents>();
-		
+
 		if (instance.gameObject.GetComponent<INetworkSceneManager>() == null)
 			instance.gameObject.AddComponent<NetworkSceneManagerDefault>();
 

@@ -1,3 +1,4 @@
+using Study.Interfaces;
 using UnityEngine;
 
 namespace StudyPhotonBare.Interfaces
